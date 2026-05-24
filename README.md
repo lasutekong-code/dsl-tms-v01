@@ -35,6 +35,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 | `driver` | `/search` |
 | `staff` | `/search` |
 
+`/admin/vehicles`는 `admin` role만 접근할 수 있고, `/search`는
+`client_manager`, `owner`, `driver`, `staff` role만 접근할 수 있습니다.
+
 `profiles` 테이블은 최소한 다음 컬럼을 포함해야 합니다.
 
 | column | description |

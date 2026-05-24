@@ -2,15 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { getRoleDestination } from "../../lib/roleDestinations";
 import { getSupabaseClient } from "../../lib/supabaseClient";
-
-const ROLE_DESTINATIONS = {
-  admin: "/admin/vehicles",
-  client_manager: "/search",
-  owner: "/search",
-  driver: "/search",
-  staff: "/search",
-};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,7 +53,7 @@ export default function LoginPage() {
         throw new Error("프로필 role 값이 없습니다.");
       }
 
-      const destination = ROLE_DESTINATIONS[profile.role];
+      const destination = getRoleDestination(profile.role);
 
       if (!destination) {
         throw new Error(`지원하지 않는 role 값입니다: ${profile.role}`);
