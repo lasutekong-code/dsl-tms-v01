@@ -123,6 +123,57 @@ function formatValue(value) {
   return value;
 }
 
+function createRecordCard(module, record) {
+  const item = document.createElement("li");
+  item.className = "record-card";
+
+  const titleField = module.fields[0];
+  const detailFields = module.fields.slice(1, 5);
+  const header = document.createElement("div");
+  header.className = "record-header";
+
+  const titleGroup = document.createElement("div");
+  const title = document.createElement("strong");
+  title.textContent = formatValue(record[titleField.name]);
+
+  const createdAt = document.createElement("small");
+  createdAt.textContent = formatDateTime(record.createdAt);
+
+  titleGroup.append(title, createdAt);
+
+  const deleteButton = document.createElement("button");
+  deleteButton.type = "button";
+  deleteButton.className = "ghost-button";
+  deleteButton.dataset.deleteId = record.id;
+  deleteButton.textContent = "삭제";
+
+  header.append(titleGroup, deleteButton);
+
+  const descriptionList = document.createElement("dl");
+  detailFields.forEach((field) => {
+    const row = document.createElement("div");
+    const term = document.createElement("dt");
+    const description = document.createElement("dd");
+
+    term.textContent = field.label;
+    description.textContent = formatValue(record[field.name]);
+    row.append(term, description);
+    descriptionList.append(row);
+  });
+
+  item.append(header, descriptionList);
+
+  if (record.photoFile?.dataUrl) {
+    const image = document.createElement("img");
+    image.className = "record-photo";
+    image.src = record.photoFile.dataUrl;
+    image.alt = record.photoFile.name || "업로드 사진";
+    item.append(image);
+  }
+
+  return item;
+}
+
 function renderRecords() {
   const module = getModuleById(state.activeModuleId);
   const records = readRecords(module.id);
@@ -142,36 +193,7 @@ function renderRecords() {
   }
 
   records.forEach((record) => {
-    const item = document.createElement("li");
-    item.className = "record-card";
-
-    const titleField = module.fields[0];
-    const detailFields = module.fields.slice(1, 5);
-
-    item.innerHTML = `
-      <div class="record-header">
-        <div>
-          <strong>${formatValue(record[titleField.name])}</strong>
-          <small>${formatDateTime(record.createdAt)}</small>
-        </div>
-        <button type="button" class="ghost-button" data-delete-id="${record.id}">삭제</button>
-      </div>
-      <dl>
-        ${detailFields
-          .map(
-            (field) => `
-              <div>
-                <dt>${field.label}</dt>
-                <dd>${formatValue(record[field.name])}</dd>
-              </div>
-            `
-          )
-          .join("")}
-      </dl>
-      ${record.photoFile?.dataUrl ? `<img class="record-photo" src="${record.photoFile.dataUrl}" alt="${record.photoFile.name}" />` : ""}
-    `;
-
-    recordsList.append(item);
+    recordsList.append(createRecordCard(module, record));
   });
 }
 
