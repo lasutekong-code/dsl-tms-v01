@@ -25,7 +25,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 1. `/login`에서 이메일/비밀번호로 로그인합니다.
 2. 로그인 성공 후 Supabase `profiles` 테이블을 조회합니다.
 3. 로그인한 사용자 ID와 같은 `profiles.id` 행의 `role` 값을 확인합니다.
-4. `role`이 있으면 `/dashboard`로 이동합니다.
+4. `role`에 맞는 화면으로 이동합니다.
+
+| role | 이동 화면 |
+| --- | --- |
+| `admin` | `/admin/vehicles` |
+| `client_manager` | `/search` |
+| `owner` | `/search` |
+| `driver` | `/search` |
+| `staff` | `/search` |
 
 `profiles` 테이블은 최소한 다음 컬럼을 포함해야 합니다.
 

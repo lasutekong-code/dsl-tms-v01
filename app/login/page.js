@@ -4,6 +4,14 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { getSupabaseClient } from "../../lib/supabaseClient";
 
+const ROLE_DESTINATIONS = {
+  admin: "/admin/vehicles",
+  client_manager: "/search",
+  owner: "/search",
+  driver: "/search",
+  staff: "/search",
+};
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -52,8 +60,14 @@ export default function LoginPage() {
         throw new Error("프로필 role 값이 없습니다.");
       }
 
+      const destination = ROLE_DESTINATIONS[profile.role];
+
+      if (!destination) {
+        throw new Error(`지원하지 않는 role 값입니다: ${profile.role}`);
+      }
+
       sessionStorage.setItem("dsl-tms-role", profile.role);
-      router.replace("/dashboard");
+      router.replace(destination);
       router.refresh();
     } catch (loginError) {
       setStatus("");
@@ -68,7 +82,7 @@ export default function LoginPage() {
         <div>
           <h1 id="login-title">로그인</h1>
           <p className="muted">
-            로그인 성공 후 profiles 테이블에서 role을 확인하고 대시보드로
+            로그인 성공 후 profiles 테이블에서 role을 확인하고 역할별 화면으로
             이동합니다.
           </p>
         </div>
