@@ -1,20 +1,13 @@
 import { Truck } from "lucide-react";
 
 import type { Profile } from "@/lib/auth/get-profile";
+import { ROLE_LABELS } from "@/lib/auth/role-labels";
 import { cn } from "@/lib/utils";
 
 interface AppHeaderProps {
   profile?: Pick<Profile, "name" | "role"> | null;
   className?: string;
 }
-
-const ROLE_LABELS: Record<Profile["role"], string> = {
-  admin: "관리자",
-  client_manager: "거래처담당자",
-  owner: "사업주",
-  driver: "운전자",
-  staff: "내부직원",
-};
 
 export function AppHeader({ profile, className }: AppHeaderProps) {
   return (
