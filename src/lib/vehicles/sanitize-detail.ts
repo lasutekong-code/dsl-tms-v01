@@ -67,10 +67,6 @@ export function sanitizeVehicleDetail(
     };
   }
 
-  if (!effectiveSensitive) {
-    next.memos = next.memos.filter((memo) => memo.visibility === "shared");
-  }
-
   return { detail: next, sensitiveFields };
 }
 

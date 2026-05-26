@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { buildVehicleDetailFromView, isUuid } from "@/lib/vehicles/build-detail";
+import { MOCK_VEHICLE_DETAIL } from "@/lib/vehicles/mock-detail";
+import { attachSignedPhotoUrls } from "@/lib/vehicles/sign-photos";
 import {
   collectViewedSensitiveFields,
   sanitizeVehicleDetail,
 } from "@/lib/vehicles/sanitize-detail";
-import { MOCK_VEHICLE_DETAIL } from "@/lib/vehicles/mock-detail";
 import {
   canAccessVehicle,
   parseUserRole,
@@ -33,15 +34,6 @@ export async function GET(
 
   if (!isUuid(id)) {
     return NextResponse.json({ error: "Invalid vehicle id." }, { status: 400 });
-  }
-
-  if (USE_MOCK) {
-    const mock = sanitizeVehicleDetail(
-      { ...MOCK_VEHICLE_DETAIL, vehicle_id: id },
-      "admin",
-      true,
-    );
-    return NextResponse.json(mock.detail satisfies VehicleDetail);
   }
 
   const supabase = await createClient();
@@ -78,10 +70,14 @@ export async function GET(
     return NextResponse.json({ error: "Role is not allowed." }, { status: 403 });
   }
 
-  const hasAccess = await canAccessVehicle(supabase, profile, id);
-
-  if (!hasAccess) {
-    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  if (USE_MOCK) {
+    const mockDetail = await attachSignedPhotoUrls(supabase, {
+      ...MOCK_VEHICLE_DETAIL,
+      vehicle_id: id,
+    });
+    const canViewSensitive = role === "admin";
+    const { detail } = sanitizeVehicleDetail(mockDetail, role, canViewSensitive);
+    return NextResponse.json(detail satisfies VehicleDetail);
   }
 
   const { data: viewRow, error: viewError } = await supabase
@@ -98,7 +94,15 @@ export async function GET(
     return NextResponse.json({ error: "Vehicle not found." }, { status: 404 });
   }
 
+  const hasAccess = await canAccessVehicle(supabase, profile, id, viewRow.client_id ? String(viewRow.client_id) : null);
+
+  if (!hasAccess) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+
   const detail = await buildVehicleDetailFromView(supabase, viewRow);
+  const detailWithPhotos = await attachSignedPhotoUrls(supabase, detail);
+
   const canViewSensitive = await resolveCanViewSensitive(
     supabase,
     profile,
@@ -106,24 +110,42 @@ export async function GET(
     detail.client_id,
   );
 
-  detail.can_view_sensitive = canViewSensitive;
+  detailWithPhotos.can_view_sensitive = canViewSensitive;
 
-  const { detail: sanitized, sensitiveFields } = sanitizeVehicleDetail(detail, role, canViewSensitive);
+  const { detail: sanitized, sensitiveFields } = sanitizeVehicleDetail(
+    detailWithPhotos,
+    role,
+    canViewSensitive,
+  );
 
-  const viewedSensitive = collectViewedSensitiveFields(detail, role);
+  const viewedSensitive = collectViewedSensitiveFields(detailWithPhotos, role);
 
-  if (viewedSensitive.length > 0 || sensitiveFields.length > 0) {
+  if (viewedSensitive.length > 0) {
     const meta = getRequestMeta(request);
     await supabase.from("audit_logs").insert({
       profile_id: profile.id,
       user_id: profile.id,
       vehicle_id: id,
       action: "view_vehicle_detail",
-      sensitive_fields: [...new Set([...viewedSensitive, ...sensitiveFields])],
+      sensitive_fields: [...new Set(viewedSensitive)],
       ip_address: meta.ip_address,
       user_agent: meta.user_agent,
       target_table: "vehicles",
       target_id: id,
+    });
+  } else if (sensitiveFields.length > 0) {
+    const meta = getRequestMeta(request);
+    await supabase.from("audit_logs").insert({
+      profile_id: profile.id,
+      user_id: profile.id,
+      vehicle_id: id,
+      action: "view_vehicle_detail",
+      sensitive_fields: sensitiveFields,
+      ip_address: meta.ip_address,
+      user_agent: meta.user_agent,
+      target_table: "vehicles",
+      target_id: id,
+      metadata: { masked: true },
     });
   }
 

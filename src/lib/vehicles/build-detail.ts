@@ -4,6 +4,7 @@ import { formatAddress } from "@/lib/vehicles/format";
 import type { Database } from "@/types/database";
 import type {
   AddressView,
+  DriverPhoto,
   MemoVisibility,
   VehicleCardRow,
   VehicleDetail,
@@ -64,13 +65,13 @@ export async function buildVehicleDetailFromView(
   const [photosResult, driverPhotoResult, addressesResult, memosResult] = await Promise.all([
     supabase
       .from("vehicle_photos")
-      .select("id, photo_type, storage_path")
+      .select("id, photo_type, storage_path, bucket")
       .eq("vehicle_id", vehicleId)
       .in("photo_type", PHOTO_ORDER),
     row.driver_id
       ? supabase
           .from("driver_photos")
-          .select("id, storage_path")
+          .select("id, storage_path, bucket")
           .eq("driver_id", String(row.driver_id))
           .limit(1)
           .maybeSingle()
@@ -96,7 +97,8 @@ export async function buildVehicleDetailFromView(
         photo_type: photo.photo_type as VehiclePhotoType,
         storage_path: photo.storage_path,
         signed_url: null,
-      });
+        bucket: photo.bucket,
+      } as VehiclePhoto & { bucket?: string | null });
     }
   }
 
@@ -175,11 +177,12 @@ export async function buildVehicleDetailFromView(
       (mailing ? formatAddress(mailing) : null),
     vehicle_photos,
     driver_photo: driverPhotoResult.data
-      ? {
+      ? ({
           id: driverPhotoResult.data.id,
           storage_path: driverPhotoResult.data.storage_path,
           signed_url: null,
-        }
+          bucket: driverPhotoResult.data.bucket,
+        } as DriverPhoto & { bucket?: string | null })
       : null,
     memos,
     can_view_sensitive: false,

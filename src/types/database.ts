@@ -34,6 +34,7 @@ export type Database = {
           photo_type: string | null;
           bucket: string | null;
           storage_path: string;
+          created_at?: string | null;
         };
         Insert: never;
         Update: never;

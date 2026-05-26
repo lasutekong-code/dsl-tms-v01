@@ -17,6 +17,7 @@ export async function canAccessVehicle(
   supabase: SupabaseClient<Database>,
   profile: ProfileRow,
   vehicleId: string,
+  clientId?: string | null,
 ): Promise<boolean> {
   const role = parseUserRole(profile.role);
 
@@ -29,13 +30,19 @@ export async function canAccessVehicle(
   }
 
   if (role === "client_manager") {
-    const { data: vehicle } = await supabase
-      .from("vehicle_card_view")
-      .select("client_id")
-      .eq("vehicle_id", vehicleId)
-      .maybeSingle();
+    let resolvedClientId = clientId;
 
-    if (!vehicle?.client_id) {
+    if (!resolvedClientId) {
+      const { data: vehicle } = await supabase
+        .from("vehicle_card_view")
+        .select("client_id")
+        .eq("vehicle_id", vehicleId)
+        .maybeSingle();
+
+      resolvedClientId = vehicle?.client_id ? String(vehicle.client_id) : null;
+    }
+
+    if (!resolvedClientId) {
       return false;
     }
 
@@ -43,7 +50,7 @@ export async function canAccessVehicle(
       .from("user_client_access")
       .select("client_id")
       .eq("user_id", profile.id)
-      .eq("client_id", vehicle.client_id)
+      .eq("client_id", resolvedClientId)
       .maybeSingle();
 
     return Boolean(access);

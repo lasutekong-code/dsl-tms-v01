@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "node --import tsx --test src/lib/vehicles/sanitize-detail.test.ts src/lib/permissions/vehicle-access.test.ts"
   },
   "repository": {
     "type": "git",
@@ -45,6 +46,7 @@
     "@types/react": "^19.2.15",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.6",
+    "tsx": "^4.22.3",
     "typescript": "^6.0.3"
   }
 }

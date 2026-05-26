@@ -171,26 +171,21 @@ export function VehicleDetailPage({ vehicleId, backHref = "/search" }: VehicleDe
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <section className="space-y-6 md:col-span-2 xl:col-span-2">
-          <VehicleSummaryCard detail={detail} />
-          <DriverInfoCard detail={detail} />
-          <ClientCenterCard detail={detail} />
-          <VehicleBasicInfoCard detail={detail} />
-          <VehicleSpecCard detail={detail} />
-          <InsuranceInspectionCard detail={detail} />
-          <ContractOwnerCard detail={detail} />
-          <AddressCard detail={detail} />
-          <MemoCard detail={detail} />
-        </section>
-
-        <aside className="space-y-6">
-          <DriverPhotoCard
-            vehicleId={detail.vehicle_id}
-            driverName={detail.driver_name}
-            photo={detail.driver_photo}
-          />
-          <VehiclePhotoGrid vehicleId={detail.vehicle_id} photos={detail.vehicle_photos} />
-        </aside>
+        <VehicleSummaryCard detail={detail} />
+        <DriverInfoCard detail={detail} />
+        <ClientCenterCard detail={detail} />
+        <VehicleBasicInfoCard detail={detail} />
+        <VehicleSpecCard detail={detail} />
+        <InsuranceInspectionCard detail={detail} />
+        <ContractOwnerCard detail={detail} />
+        <AddressCard detail={detail} />
+        <MemoCard detail={detail} />
+        <DriverPhotoCard
+          vehicleId={detail.vehicle_id}
+          driverName={detail.driver_name}
+          photo={detail.driver_photo}
+        />
+        <VehiclePhotoGrid vehicleId={detail.vehicle_id} photos={detail.vehicle_photos} />
       </div>
     </div>
   );
