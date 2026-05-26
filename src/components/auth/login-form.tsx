@@ -31,9 +31,10 @@ export function LoginForm({ redirectTo = "/", serverError }: LoginFormProps) {
           type="email"
           autoComplete="email"
           inputMode="email"
+          autoFocus
           required
           placeholder="name@company.com"
-          className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 shadow-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 shadow-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
         />
       </div>
 
@@ -51,7 +52,7 @@ export function LoginForm({ redirectTo = "/", serverError }: LoginFormProps) {
           autoComplete="current-password"
           required
           placeholder="••••••••"
-          className="h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 shadow-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+          className="h-12 w-full rounded-lg border border-slate-300 bg-white px-3 text-base text-slate-900 shadow-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
         />
       </div>
 
@@ -67,7 +68,7 @@ export function LoginForm({ redirectTo = "/", serverError }: LoginFormProps) {
       <button
         type="submit"
         disabled={isPending}
-        className="h-11 w-full rounded-lg bg-blue-700 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
+        className="h-12 w-full rounded-lg bg-blue-700 text-base font-semibold text-white shadow-sm transition hover:bg-blue-800 active:bg-blue-900 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? "로그인 중…" : "로그인"}
       </button>

@@ -29,10 +29,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   }
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-slate-100 lg:flex-row">
-      <section className="flex flex-1 flex-col justify-center px-6 py-12 sm:px-10 lg:px-16">
+    <div className="flex min-h-dvh flex-1 flex-col bg-slate-100 lg:min-h-full lg:flex-row">
+      <section className="flex flex-1 flex-col justify-center px-4 py-10 sm:px-10 lg:px-16">
         <div className="mx-auto w-full max-w-md">
-          <div className="mb-8">
+          <div className="mb-8 text-center lg:text-left">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-700 text-sm font-bold text-white lg:mx-0">
+              DSL
+            </div>
             <p className="text-xs font-semibold uppercase tracking-wider text-blue-700">
               DSL TMS
             </p>
@@ -45,11 +48,20 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
             <h2 className="mb-6 text-lg font-semibold text-slate-900">
               로그인
             </h2>
             <LoginForm redirectTo={redirectTo} serverError={serverError} />
+          </div>
+
+          <div className="mt-6 rounded-xl border border-slate-200 bg-white/80 p-4 text-xs leading-relaxed text-slate-600 lg:hidden">
+            <p className="font-semibold text-slate-800">접근 안내</p>
+            <ul className="mt-2 list-inside list-disc space-y-1">
+              <li>역할별 메뉴·데이터 접근 제한</li>
+              <li>운전자 사진은 signed URL로만 표시</li>
+              <li>면허·생년월일·주소는 권한 있는 역할만 조회</li>
+            </ul>
           </div>
 
           <p className="mt-6 text-center text-xs text-slate-500">
