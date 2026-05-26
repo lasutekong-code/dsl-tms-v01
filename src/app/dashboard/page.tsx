@@ -4,7 +4,10 @@ import { redirect } from "next/navigation";
 import { getProfile } from "@/lib/auth/get-profile";
 import { getRedirectPathForRole } from "@/lib/auth/role-redirect";
 
-export default async function HomePage() {
+/**
+ * 로그인 후 role에 따라 적절한 업무 화면으로 보냅니다.
+ */
+export default async function DashboardPage() {
   const profile = await getProfile();
 
   if (!profile) {

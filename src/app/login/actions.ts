@@ -2,12 +2,18 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { canAccessApp } from "@/lib/auth/roles";
-import type { UserRole } from "@/types/database";
+import { getRedirectPathForRole, isProfileRole } from "@/lib/auth/role-redirect";
+import {
+  PROFILE_COLUMNS,
+  type ProfileRole,
+} from "@/types/database";
 
 export type LoginState = {
   error?: string;
 };
+
+const INACTIVE_MESSAGE =
+  "비활성화된 계정입니다. 관리자에게 문의하십시오.";
 
 export async function signIn(
   _prevState: LoginState,
@@ -15,7 +21,6 @@ export async function signIn(
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  const redirectTo = String(formData.get("redirect") ?? "/").trim() || "/";
 
   if (!email || !password) {
     return { error: "이메일과 비밀번호를 입력해 주세요." };
@@ -29,28 +34,31 @@ export async function signIn(
     return { error: "이메일 또는 비밀번호가 올바르지 않습니다." };
   }
 
-  const { data: appUser, error: userError } = await supabase
-    .from("users")
-    .select("role, is_active")
-    .eq("auth_user_id", authData.user.id)
-    .is("deleted_at", null)
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select(PROFILE_COLUMNS)
+    .eq("id", authData.user.id)
     .maybeSingle();
 
-  if (userError || !appUser) {
+  if (profileError || !profile) {
     await supabase.auth.signOut();
     return {
-      error: "등록된 업무 계정이 없습니다. 관리자에게 문의하세요.",
+      error: "등록된 프로필이 없습니다. 관리자에게 문의하세요.",
     };
   }
 
-  const role = appUser.role as UserRole;
-
-  if (!appUser.is_active || !canAccessApp(role)) {
+  if (!isProfileRole(profile.role)) {
     await supabase.auth.signOut();
-    return { error: "접근 권한이 없거나 비활성 계정입니다." };
+    return { error: "유효하지 않은 계정 역할입니다. 관리자에게 문의하세요." };
   }
 
-  redirect(redirectTo.startsWith("/") ? redirectTo : "/");
+  if (!profile.is_active) {
+    await supabase.auth.signOut();
+    return { error: INACTIVE_MESSAGE };
+  }
+
+  const role = profile.role as ProfileRole;
+  redirect(getRedirectPathForRole(role));
 }
 
 export async function signOut() {

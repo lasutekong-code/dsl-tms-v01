@@ -1,38 +1,42 @@
 # dsl-tms-v01
 
-DSL 운송 관리 시스템 (TMS) — Next.js + Tailwind + Supabase
+운송회사 차량관리 웹앱 — Next.js App Router + Supabase + shadcn/ui
 
-## 기능
+## 기술 스택
 
-- **로그인** (`/login`): 업무용 이메일/비밀번호 로그인, 모바일 대응 UI
-- **역할 기반 접근**: `users.role` — admin, manager, dispatcher, driver, viewer
-- **운전자 사진**: `drivers.photo_path` → Storage signed URL
-- **민감정보**: `driver_license_number`, `birth_date`, `address`는 admin/manager만 표시
+- Next.js App Router, TypeScript, Tailwind CSS
+- shadcn/ui (Button, Input, Label, Card, Alert)
+- Supabase Auth + PostgreSQL + RLS
+- Vercel 배포 예정
 
-## DB 컬럼명
+## 인증 · 역할
 
-앱 코드는 `supabase/migrations/` 스키마의 컬럼명을 그대로 사용합니다.
+로그인은 Supabase Auth (`signInWithPassword`) 후 `public.profiles`에서 조회합니다.
 
-| 테이블 | 주요 컬럼 |
-|--------|-----------|
-| `users` | `auth_user_id`, `email`, `role`, `is_active` |
-| `drivers` | `full_name`, `driver_license_number`, `birth_date`, `address`, `photo_path` |
+| role | 로그인 후 이동 |
+|------|----------------|
+| admin | `/admin/vehicles` |
+| client_manager, owner, driver, staff | `/search` |
+
+`profiles` 컬럼: `id`, `role`, `name`, `phone`, `email`, `is_active`, `created_at`, `updated_at`
 
 ## 시작하기
 
 ```bash
 cp .env.example .env.local
-# Supabase URL / anon key 설정 후
 npm install
 npm run dev
 ```
 
-마이그레이션은 Supabase CLI 또는 SQL Editor에서 `supabase/migrations/20250525000000_initial_schema.sql` 실행.
+- 로그인: http://localhost:3000/login
+- role 라우팅 허브: `/dashboard`
 
-`auth.users`와 `public.users`를 연동하려면 동일 이메일로 `users.auth_user_id`를 채워 주세요.
+## 주요 경로
 
-## 스크립트
-
-- `npm run dev` — 개발 서버
-- `npm run build` — 프로덕션 빌드
-- `npm run lint` — ESLint
+| 파일 | 역할 |
+|------|------|
+| `src/app/login/page.tsx` | 로그인 화면 (서버) |
+| `src/components/login/login-form.tsx` | 로그인 폼 (클라이언트) |
+| `src/lib/auth/get-profile.ts` | 프로필 조회 |
+| `src/app/dashboard/page.tsx` | role별 redirect |
+| `src/components/layout/app-header.tsx` | 공통 헤더 |

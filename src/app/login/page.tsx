@@ -1,85 +1,93 @@
 import { redirect } from "next/navigation";
-import { LoginForm } from "@/components/auth/login-form";
-import { getAppSession } from "@/lib/auth/session";
+import { getProfile } from "@/lib/auth/get-profile";
+import { getRedirectPathForRole } from "@/lib/auth/role-redirect";
+import { LoginForm } from "@/components/login/login-form";
+export const dynamic = "force-dynamic";
 
-const ERROR_MESSAGES: Record<string, string> = {
-  access_denied: "접근 권한이 없습니다. 관리자에게 문의하세요.",
-  forbidden: "이 페이지에 접근할 권한이 없습니다.",
-};
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
+const INACTIVE_MESSAGE =
+  "비활성화된 계정입니다. 관리자에게 문의하십시오.";
 
 type LoginPageProps = {
-  searchParams: Promise<{
-    redirect?: string;
-    error?: string;
-  }>;
+  searchParams: Promise<{ error?: string }>;
 };
+
+function resolveServerError(code: string | undefined): string | undefined {
+  if (code === "inactive") return INACTIVE_MESSAGE;
+  if (code === "access_denied")
+    return "접근 권한이 없습니다. 관리자에게 문의하세요.";
+  return undefined;
+}
 
 function BrandMark() {
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center justify-center gap-3 lg:justify-start">
       <div
         className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#2196f3] text-sm font-semibold text-white"
         aria-hidden
       >
-        L
+        V
       </div>
-      <span className="text-base font-semibold text-[#171717]">차량관리</span>
+      <span className="text-base font-semibold text-[#171717]">
+        차량관리 시스템
+      </span>
     </div>
   );
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const session = await getAppSession();
+  const profile = await getProfile();
   const params = await searchParams;
-  const redirectTo = params.redirect?.startsWith("/")
-    ? params.redirect
-    : "/";
-  const serverError = params.error
-    ? ERROR_MESSAGES[params.error] ?? "로그인에 실패했습니다."
-    : undefined;
+  const serverError = resolveServerError(params.error);
 
-  if (session) {
-    redirect(redirectTo);
+  if (profile?.is_active) {
+    redirect(getRedirectPathForRole(profile.role));
   }
 
   return (
-    <div className="flex min-h-dvh bg-[#fafafa]">
-      {/* Figma 사이드바(256px) 톤 — 데스크톱 브랜드 영역 */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-[#e5e5e5] bg-white px-6 py-8 lg:flex">
+    <div className="flex min-h-dvh flex-col bg-[#fafafa] lg:flex-row">
+      <aside className="hidden border-b border-[#e5e5e5] bg-white px-8 py-10 lg:flex lg:w-80 lg:flex-col lg:border-b-0 lg:border-r xl:w-96">
         <BrandMark />
-        <div className="mt-10 flex flex-1 flex-col">
-          <h1 className="text-xl font-semibold leading-snug text-[#171717]">
-            관리자 대시보드
+        <div className="mt-10 flex-1">
+          <h1 className="text-xl font-semibold text-[#171717]">
+            운송회사 차량관리
           </h1>
           <p className="mt-3 text-sm leading-relaxed text-[#525252]">
-            차량·운전자·거래처를 한곳에서 관리합니다. 역할에 따라 메뉴와
-            운전자 정보 접근 범위가 달라집니다.
+            차량·운전자·거래처 정보를 안전하게 관리합니다. 역할에 따라 접근
+            가능한 메뉴가 달라집니다.
           </p>
         </div>
-        <ul className="space-y-3 border-t border-[#e5e5e5] pt-6 text-xs leading-relaxed text-[#737373]">
-          <li>운전자 사진: Storage signed URL</li>
-          <li>면허·생년월일·주소: admin/manager만 조회</li>
-        </ul>
+        <p className="text-xs text-[#737373]">
+          © 차량관리 시스템 · 허가된 사용자 전용
+        </p>
       </aside>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-10 sm:px-8">
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-10 sm:px-6">
         <div className="mb-8 w-full max-w-[400px] lg:hidden">
           <BrandMark />
-          <p className="mt-4 text-sm text-[#525252]">관리자 대시보드 로그인</p>
         </div>
 
-        <div className="w-full max-w-[400px] rounded-lg border border-[#e5e5e5] bg-white p-6 shadow-sm sm:p-8">
-          <h2 className="text-lg font-semibold text-[#171717]">로그인</h2>
-          <p className="mt-1 text-sm text-[#525252]">
-            업무 이메일과 비밀번호를 입력하세요.
-          </p>
-          <div className="mt-6">
-            <LoginForm redirectTo={redirectTo} serverError={serverError} />
-          </div>
-        </div>
+        <Card className="w-full max-w-[400px]">
+          <CardHeader className="text-center sm:text-left">
+            <CardTitle>로그인</CardTitle>
+            <CardDescription>
+              업무 이메일과 비밀번호로 로그인하세요.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LoginForm serverError={serverError} />
+          </CardContent>
+        </Card>
 
         <p className="mt-6 max-w-[400px] text-center text-xs text-[#737373]">
-          계정 문의: 시스템 관리자
+          허가된 사용자만 접근할 수 있습니다.
         </p>
       </main>
     </div>

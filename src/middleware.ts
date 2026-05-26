@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
-import {
-  canAccessApp,
-  canAccessPath,
-  requiredRoleForPath,
-} from "@/lib/auth/roles";
 import { createServerClient } from "@supabase/ssr";
-import type { Database, UserRole } from "@/types/database";
+import {
+  PROFILE_COLUMNS,
+  type Database,
+  type ProfileRole,
+} from "@/types/database";
+import { isProfileRole } from "@/lib/auth/role-redirect";
 
 const PUBLIC_PATHS = ["/login", "/auth/callback"];
 
@@ -47,37 +47,36 @@ export async function middleware(request: NextRequest) {
   if (!authUser) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  const { data: appUser } = await supabase
-    .from("users")
-    .select("role, is_active")
-    .eq("auth_user_id", authUser.id)
-    .is("deleted_at", null)
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select(PROFILE_COLUMNS)
+    .eq("id", authUser.id)
     .maybeSingle();
 
-  const role = appUser?.role as UserRole | undefined;
-
-  if (!appUser?.is_active || !canAccessApp(role)) {
+  if (
+    !profile ||
+    !profile.is_active ||
+    !isProfileRole(profile.role)
+  ) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("error", "access_denied");
+    loginUrl.searchParams.set(
+      "error",
+      profile && !profile.is_active ? "inactive" : "access_denied"
+    );
     await supabase.auth.signOut();
     return NextResponse.redirect(loginUrl);
   }
 
-  if (!canAccessPath(pathname, role)) {
-    const homeUrl = request.nextUrl.clone();
-    homeUrl.pathname = "/";
-    homeUrl.searchParams.set("error", "forbidden");
-    return NextResponse.redirect(homeUrl);
-  }
+  const role = profile.role as ProfileRole;
 
-  const required = requiredRoleForPath(pathname);
-  if (required && role) {
-    response.headers.set("x-user-role", role);
+  if (pathname.startsWith("/admin") && role !== "admin") {
+    const searchUrl = request.nextUrl.clone();
+    searchUrl.pathname = "/search";
+    return NextResponse.redirect(searchUrl);
   }
 
   return response;
