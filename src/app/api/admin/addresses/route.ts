@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import { flattenZodErrors, uuidString } from "@/lib/admin/zod-util";
+import {optionalNullableTrimmedString, flattenZodErrors, uuidString} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +15,9 @@ const createSchema = z.object({
   target_table: z.enum(TARGETS),
   target_id: uuidString,
   address_type: z.enum(ADDRESS_TYPES),
-  zip_code: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  address1: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  address2: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  zip_code: optionalNullableTrimmedString,
+  address1: optionalNullableTrimmedString,
+  address2: optionalNullableTrimmedString,
 });
 
 export async function POST(request: NextRequest) {

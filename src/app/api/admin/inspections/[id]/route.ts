@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse, omitUndefined } from "@/lib/admin/api-guard";
-import { dateYmdSchema, flattenZodErrors, uuidString } from "@/lib/admin/zod-util";
+import {optionalNullableTrimmedString, dateYmdSchema, flattenZodErrors, uuidString} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 import type { VehicleInspectionRow } from "@/types/database";
 import { isUuid } from "@/lib/vehicles/build-detail";
@@ -13,9 +13,9 @@ export const dynamic = "force-dynamic";
 const updateSchema = z.object({
   vehicle_id: uuidString.optional(),
   inspection_date: dateYmdSchema.optional(),
-  inspection_type: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  result: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  memo: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  inspection_type: optionalNullableTrimmedString,
+  result: optionalNullableTrimmedString,
+  memo: optionalNullableTrimmedString,
 });
 
 type RouteContext = { params: Promise<{ id: string }> };

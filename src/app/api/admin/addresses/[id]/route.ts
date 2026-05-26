@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse, omitUndefined } from "@/lib/admin/api-guard";
-import { flattenZodErrors } from "@/lib/admin/zod-util";
+import {optionalNullableTrimmedString, flattenZodErrors} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 import type { AddressRow } from "@/types/database";
 import { isUuid } from "@/lib/vehicles/build-detail";
@@ -14,9 +14,9 @@ const ADDRESS_TYPES = ["home", "mailing"] as const;
 
 const updateSchema = z.object({
   address_type: z.enum(ADDRESS_TYPES).optional(),
-  zip_code: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  address1: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  address2: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  zip_code: optionalNullableTrimmedString,
+  address1: optionalNullableTrimmedString,
+  address2: optionalNullableTrimmedString,
 });
 
 type RouteContext = { params: Promise<{ id: string }> };

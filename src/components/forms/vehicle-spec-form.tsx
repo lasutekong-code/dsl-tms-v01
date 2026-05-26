@@ -13,6 +13,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { applyApiFieldErrors, parseApiErrorMessage } from "@/lib/admin/form-api-errors";
 import type { VehicleSpecRow } from "@/types/database";
 
 const formSchema = z.object({
@@ -25,12 +26,17 @@ const formSchema = z.object({
 
 export type VehicleSpecFormValues = z.infer<typeof formSchema>;
 
-function parseApiError(payload: unknown): string {
-  if (payload && typeof payload === "object" && "error" in payload && typeof (payload as { error: unknown }).error === "string") {
-    return (payload as { error: string }).error;
+function parseOptionalInt(value: string | undefined, field: keyof VehicleSpecFormValues, label: string) {
+  if (!value?.trim()) {
+    return { ok: true as const, value: null };
   }
 
-  return "요청 처리 중 오류가 발생했습니다.";
+  const n = Number.parseInt(value, 10);
+  if (!Number.isFinite(n) || n < 0) {
+    return { ok: false as const, field, message: `${label}은(는) 0 이상의 정수여야 합니다.` };
+  }
+
+  return { ok: true as const, value: n };
 }
 
 export function VehicleSpecForm({
@@ -56,44 +62,61 @@ export function VehicleSpecForm({
   async function onSubmit(values: VehicleSpecFormValues) {
     setPending(true);
     try {
+      const height = parseOptionalInt(values.height_mm, "height_mm", "높이");
+      if (!height.ok) {
+        form.setError(height.field, { message: height.message });
+        return;
+      }
+
+      const length = parseOptionalInt(values.length_mm, "length_mm", "길이");
+      if (!length.ok) {
+        form.setError(length.field, { message: length.message });
+        return;
+      }
+
+      const width = parseOptionalInt(values.width_mm, "width_mm", "폭");
+      if (!width.ok) {
+        form.setError(width.field, { message: width.message });
+        return;
+      }
+
+      const maxLoad = parseOptionalInt(values.max_load_kg, "max_load_kg", "최대 적재");
+      if (!maxLoad.ok) {
+        form.setError(maxLoad.field, { message: maxLoad.message });
+        return;
+      }
+
       const body = {
         vehicle_id: vehicleId,
         special_equipment: values.special_equipment?.trim() ? values.special_equipment.trim() : null,
-        height_mm: values.height_mm?.trim() ? Number.parseInt(values.height_mm, 10) : null,
-        length_mm: values.length_mm?.trim() ? Number.parseInt(values.length_mm, 10) : null,
-        width_mm: values.width_mm?.trim() ? Number.parseInt(values.width_mm, 10) : null,
-        max_load_kg: values.max_load_kg?.trim() ? Number.parseInt(values.max_load_kg, 10) : null,
+        height_mm: height.value,
+        length_mm: length.value,
+        width_mm: width.value,
+        max_load_kg: maxLoad.value,
       };
 
-      if (defaultValues?.id) {
-        const patch = {
-          special_equipment: body.special_equipment,
-          height_mm: body.height_mm,
-          length_mm: body.length_mm,
-          width_mm: body.width_mm,
-          max_load_kg: body.max_load_kg,
-        };
-        const res = await fetch(`/api/admin/vehicle-specs/${defaultValues.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(patch),
-        });
-        const json: unknown = await res.json().catch(() => null);
-        if (!res.ok) {
-          toast.error(parseApiError(json));
-          return;
-        }
-      } else {
-        const res = await fetch("/api/admin/vehicle-specs", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-        const json: unknown = await res.json().catch(() => null);
-        if (!res.ok) {
-          toast.error(parseApiError(json));
-          return;
-        }
+      const url = defaultValues?.id ? `/api/admin/vehicle-specs/${defaultValues.id}` : "/api/admin/vehicle-specs";
+      const method = defaultValues?.id ? "PATCH" : "POST";
+      const payload = defaultValues?.id
+        ? {
+            special_equipment: body.special_equipment,
+            height_mm: body.height_mm,
+            length_mm: body.length_mm,
+            width_mm: body.width_mm,
+            max_load_kg: body.max_load_kg,
+          }
+        : body;
+
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const json: unknown = await res.json().catch(() => null);
+      if (!res.ok) {
+        applyApiFieldErrors(json, form.setError);
+        toast.error(parseApiErrorMessage(json));
+        return;
       }
 
       toast.success("차량 제원이 저장되었습니다.");
@@ -115,18 +138,30 @@ export function VehicleSpecForm({
           <div className="space-y-2">
             <Label htmlFor="height_mm">높이(mm)</Label>
             <Input id="height_mm" type="number" min={0} {...form.register("height_mm")} />
+            {form.formState.errors.height_mm ? (
+              <p className="text-sm text-red-600">{form.formState.errors.height_mm.message}</p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="length_mm">길이(mm)</Label>
             <Input id="length_mm" type="number" min={0} {...form.register("length_mm")} />
+            {form.formState.errors.length_mm ? (
+              <p className="text-sm text-red-600">{form.formState.errors.length_mm.message}</p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="width_mm">폭(mm)</Label>
             <Input id="width_mm" type="number" min={0} {...form.register("width_mm")} />
+            {form.formState.errors.width_mm ? (
+              <p className="text-sm text-red-600">{form.formState.errors.width_mm.message}</p>
+            ) : null}
           </div>
           <div className="space-y-2">
             <Label htmlFor="max_load_kg">최대 적재(kg)</Label>
             <Input id="max_load_kg" type="number" min={0} {...form.register("max_load_kg")} />
+            {form.formState.errors.max_load_kg ? (
+              <p className="text-sm text-red-600">{form.formState.errors.max_load_kg.message}</p>
+            ) : null}
           </div>
         </FieldGrid>
       </AdminSectionCard>

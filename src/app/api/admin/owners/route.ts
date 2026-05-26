@@ -9,19 +9,14 @@ import {
   flattenZodErrors,
   formatKoreanBusinessNo,
   normalizeBusinessNo,
+  optionalNullableTrimmedString,
+  optionalUuidSchema,
   phoneSchema,
   requiredTrimmed,
 } from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-
-const optionalUuid = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => (!v ? null : v))
-  .pipe(z.union([z.null(), z.string().uuid("올바른 ID가 아닙니다.")]));
 
 async function findDuplicateOwnerBusinessNo(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -51,14 +46,14 @@ async function findDuplicateOwnerBusinessNo(
 }
 
 const createSchema = z.object({
-  profile_id: optionalUuid,
+  profile_id: optionalUuidSchema,
   owner_name: requiredTrimmed("사업주명"),
   owner_phone: phoneSchema,
   business_no: businessNoOptionalSchema,
   business_start_date: dateYmdOptionalSchema,
   business_closed_date: dateYmdOptionalSchema,
   vat_filing_enabled: z.boolean().optional().default(false),
-  service_fee_send_method: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  service_fee_send_method: optionalNullableTrimmedString,
   is_active: z.boolean().optional().default(true),
 });
 

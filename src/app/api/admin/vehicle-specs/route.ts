@@ -3,14 +3,14 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import { flattenZodErrors, nonNegativeIntOptional, uuidString } from "@/lib/admin/zod-util";
+import {optionalNullableTrimmedString, flattenZodErrors, nonNegativeIntOptional, uuidString} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 const specSchema = z.object({
   vehicle_id: uuidString,
-  special_equipment: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  special_equipment: optionalNullableTrimmedString,
   height_mm: nonNegativeIntOptional,
   length_mm: nonNegativeIntOptional,
   width_mm: nonNegativeIntOptional,

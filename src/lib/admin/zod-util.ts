@@ -10,12 +10,37 @@ export function flattenZodErrors(error: z.ZodError): Record<string, string[]> {
   return fields;
 }
 
-export const optionalTrimmed = z
-  .string()
-  .trim()
-  .transform((v) => (v === "" ? null : v))
-  .nullable()
-  .optional();
+/** Normalizes absent values from JSON/forms to `null` for optional DB columns. */
+export function emptyToNull(value: unknown): unknown {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  return value;
+}
+
+export const optionalNullableTrimmedString = z.preprocess((value) => {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed === "" ? null : trimmed;
+  }
+
+  return value;
+}, z.union([z.null(), z.string()]));
+
+export const optionalEmailSchema = z.preprocess(
+  emptyToNull,
+  z.union([z.null(), z.string().email("이메일 형식이 올바르지 않습니다.")]),
+);
+
+export const optionalUuidSchema = z.preprocess(
+  emptyToNull,
+  z.union([z.null(), z.string().uuid("올바른 ID가 아닙니다.")]),
+);
 
 export const requiredTrimmed = (label: string) => z.string().trim().min(1, `${label}은(는) 필수입니다.`);
 
@@ -25,31 +50,26 @@ export const phoneSchema = z
   .min(1, "전화번호는 필수입니다.")
   .regex(/^[\d+\-()\s]{9,20}$/u, "전화번호 형식이 올바르지 않습니다.");
 
-export const phoneOptionalSchema = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => (!v ? null : v))
-  .pipe(
-    z.union([
-      z.null(),
-      z.string().regex(/^[\d+\-()\s]{9,20}$/u, "전화번호 형식이 올바르지 않습니다."),
-    ]),
-  );
+export const phoneOptionalSchema = z.preprocess(
+  emptyToNull,
+  z.union([
+    z.null(),
+    z.string().trim().regex(/^[\d+\-()\s]{9,20}$/u, "전화번호 형식이 올바르지 않습니다."),
+  ]),
+);
 
 export const dateYmdSchema = z
   .string()
   .trim()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "날짜는 YYYY-MM-DD 형식이어야 합니다.");
 
-export const dateYmdOptionalSchema = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => (!v ? null : v))
-  .pipe(
-    z.union([z.null(), z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "날짜는 YYYY-MM-DD 형식이어야 합니다.")]),
-  );
+export const dateYmdOptionalSchema = z.preprocess(
+  emptyToNull,
+  z.union([
+    z.null(),
+    z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "날짜는 YYYY-MM-DD 형식이어야 합니다."),
+  ]),
+);
 
 export const uuidString = z.string().uuid("올바른 ID가 아닙니다.");
 
@@ -58,6 +78,11 @@ export const nonNegativeNumber = z.coerce.number().finite().nonnegative("0 이�
 export const nonNegativeIntOptional = z.preprocess(
   (v) => (v === "" || v === null || v === undefined ? null : v),
   z.coerce.number().int().nonnegative().nullable().optional(),
+);
+
+export const nonNegativeFloatOptional = z.preprocess(
+  (v) => (v === "" || v === null || v === undefined ? null : v),
+  z.coerce.number().finite().nonnegative().nullable().optional(),
 );
 
 export function normalizeBusinessNo(value: string | null | undefined): string | null {
@@ -86,20 +111,16 @@ export const businessNoSchema = z
     return d !== null && d.length === 10;
   }, "사업자등록번호는 10자리 숫자여야 합니다.");
 
-export const businessNoOptionalSchema = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => (!v ? null : v))
-  .pipe(
-    z.union([
-      z.null(),
-      z.string().refine(
-        (v) => {
-          const d = normalizeBusinessNo(v);
-          return d !== null && d.length === 10;
-        },
-        { message: "사업자등록번호는 10자리 숫자여야 합니다." },
-      ),
-    ]),
-  );
+export const businessNoOptionalSchema = z.preprocess(
+  emptyToNull,
+  z.union([
+    z.null(),
+    z.string().refine(
+      (v) => {
+        const d = normalizeBusinessNo(v);
+        return d !== null && d.length === 10;
+      },
+      { message: "사업자등록번호는 10자리 숫자여야 합니다." },
+    ),
+  ]),
+);

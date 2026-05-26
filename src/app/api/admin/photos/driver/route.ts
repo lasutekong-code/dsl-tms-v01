@@ -2,21 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
+import { validatePhotoFile } from "@/lib/admin/photo-file";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
 export const dynamic = "force-dynamic";
 
 const BUCKET = "driver-photos";
-const MAX_BYTES = 5 * 1024 * 1024;
-const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
-function extForMime(mime: string) {
-  if (mime === "image/png") {
+function extForMime(mime: string, fileName: string) {
+  const fromName = fileName.split(".").pop()?.toLowerCase();
+  if (fromName === "png" || mime === "image/png") {
     return "png";
   }
 
-  if (mime === "image/webp") {
+  if (fromName === "webp" || mime === "image/webp") {
     return "webp";
   }
 
@@ -47,16 +47,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "파일이 필요합니다." }, { status: 400 });
   }
 
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "파일 크기는 5MB 이하여야 합니다." }, { status: 400 });
+  const fileError = validatePhotoFile(file);
+  if (fileError) {
+    return NextResponse.json({ error: fileError }, { status: 400 });
   }
 
   const mime = file.type || "application/octet-stream";
-  if (!ALLOWED_TYPES.has(mime)) {
-    return NextResponse.json({ error: "jpg, png, webp 이미지만 업로드할 수 있습니다." }, { status: 400 });
-  }
-
-  const ext = extForMime(mime);
+  const ext = extForMime(mime, file.name);
   const storagePath = `${driverId}/profile.${ext}`;
 
   const supabase = await createClient();

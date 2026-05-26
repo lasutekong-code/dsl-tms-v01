@@ -3,7 +3,13 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse, omitUndefined } from "@/lib/admin/api-guard";
-import { dateYmdOptionalSchema, flattenZodErrors, uuidString } from "@/lib/admin/zod-util";
+import {
+  dateYmdOptionalSchema,
+  flattenZodErrors,
+  nonNegativeFloatOptional,
+  optionalNullableTrimmedString,
+  uuidString,
+} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 import type { InsuranceRow } from "@/types/database";
 import { isUuid } from "@/lib/vehicles/build-detail";
@@ -12,13 +18,10 @@ export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({
   vehicle_id: uuidString.optional(),
-  insurance_company: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  insurance_rate: z.preprocess(
-    (v) => (v === "" || v === null || v === undefined ? undefined : v),
-    z.coerce.number().finite().nonnegative().optional(),
-  ),
+  insurance_company: optionalNullableTrimmedString,
+  insurance_rate: nonNegativeFloatOptional.optional(),
   renewal_date: dateYmdOptionalSchema.optional(),
-  memo: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  memo: optionalNullableTrimmedString,
 });
 
 type RouteContext = { params: Promise<{ id: string }> };

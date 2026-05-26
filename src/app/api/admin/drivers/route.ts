@@ -6,6 +6,8 @@ import { getAdminOrResponse } from "@/lib/admin/api-guard";
 import {
   dateYmdOptionalSchema,
   flattenZodErrors,
+  optionalNullableTrimmedString,
+  optionalUuidSchema,
   phoneSchema,
   requiredTrimmed,
 } from "@/lib/admin/zod-util";
@@ -13,20 +15,13 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const optionalUuid = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => (!v ? null : v))
-  .pipe(z.union([z.null(), z.string().uuid("올바른 ID가 아닙니다.")]));
-
 const createSchema = z.object({
-  profile_id: optionalUuid,
+  profile_id: optionalUuidSchema,
   driver_name: requiredTrimmed("운전자명"),
   birth_date: dateYmdOptionalSchema,
   phone: phoneSchema,
-  driver_license_no: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  cargo_license_no: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  driver_license_no: optionalNullableTrimmedString,
+  cargo_license_no: optionalNullableTrimmedString,
   is_active: z.boolean().optional().default(true),
 });
 

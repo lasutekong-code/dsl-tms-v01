@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import { flattenZodErrors, phoneOptionalSchema, requiredTrimmed, uuidString } from "@/lib/admin/zod-util";
+import {optionalNullableTrimmedString, flattenZodErrors, phoneOptionalSchema, requiredTrimmed, uuidString} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 const updateSchema = z.object({
   client_id: uuidString.optional(),
   center_name: requiredTrimmed("센터명").optional(),
-  address: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  address: optionalNullableTrimmedString,
   phone: phoneOptionalSchema.optional(),
   is_active: z.boolean().optional(),
 });

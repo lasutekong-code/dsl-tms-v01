@@ -3,12 +3,10 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import {
-  dateYmdOptionalSchema,
+import {optionalNullableTrimmedString, dateYmdOptionalSchema,
   flattenZodErrors,
   nonNegativeIntOptional,
-  requiredTrimmed,
-} from "@/lib/admin/zod-util";
+  requiredTrimmed,} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -41,11 +39,11 @@ async function findDuplicateVehicleNo(
 
 const createSchema = z.object({
   vehicle_no: requiredTrimmed("차량번호"),
-  car_name: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  car_name: optionalNullableTrimmedString,
   registration_date: dateYmdOptionalSchema,
   model_year: nonNegativeIntOptional,
-  vin: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  vehicle_model_type: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  vin: optionalNullableTrimmedString,
+  vehicle_model_type: optionalNullableTrimmedString,
   tonnage: z.preprocess(
     (v) => (v === "" || v === null || v === undefined ? null : v),
     z.coerce.number().finite().nonnegative().nullable().optional(),

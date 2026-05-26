@@ -14,6 +14,7 @@ import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { applyApiFieldErrors, parseApiErrorMessage } from "@/lib/admin/form-api-errors";
 import type { InsuranceRow } from "@/types/database";
 
 const formSchema = z.object({
@@ -25,14 +26,6 @@ const formSchema = z.object({
 });
 
 export type InsuranceFormValues = z.infer<typeof formSchema>;
-
-function parseApiError(payload: unknown): string {
-  if (payload && typeof payload === "object" && "error" in payload && typeof (payload as { error: unknown }).error === "string") {
-    return (payload as { error: string }).error;
-  }
-
-  return "요청 처리 중 오류가 발생했습니다.";
-}
 
 export function InsuranceForm({
   mode,
@@ -59,10 +52,21 @@ export function InsuranceForm({
   async function onSubmit(values: InsuranceFormValues) {
     setPending(true);
     try {
+      let insurance_rate: number | null = null;
+      if (values.insurance_rate?.trim()) {
+        const rate = Number.parseFloat(values.insurance_rate);
+        if (!Number.isFinite(rate) || rate < 0) {
+          form.setError("insurance_rate", { message: "요율은 0 이상이어야 합니다." });
+          return;
+        }
+
+        insurance_rate = rate;
+      }
+
       const body = {
         vehicle_id: values.vehicle_id,
         insurance_company: values.insurance_company?.trim() ? values.insurance_company.trim() : null,
-        insurance_rate: values.insurance_rate?.trim() ? Number.parseFloat(values.insurance_rate) : null,
+        insurance_rate,
         renewal_date: values.renewal_date?.trim() ? values.renewal_date.trim() : null,
         memo: values.memo?.trim() ? values.memo.trim() : null,
       };
@@ -75,7 +79,8 @@ export function InsuranceForm({
       });
       const json: unknown = await res.json().catch(() => null);
       if (!res.ok) {
-        toast.error(parseApiError(json));
+        applyApiFieldErrors(json, form.setError);
+        toast.error(parseApiErrorMessage(json));
         return;
       }
 

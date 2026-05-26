@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import { dateYmdOptionalSchema, dateYmdSchema, flattenZodErrors, uuidString } from "@/lib/admin/zod-util";
+import {optionalNullableTrimmedString, dateYmdOptionalSchema, dateYmdSchema, flattenZodErrors, uuidString} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ const createSchema = z.object({
   contract_start_date: dateYmdSchema,
   contract_end_date: dateYmdOptionalSchema,
   status: z.enum(CONTRACT_STATUSES).optional().default("active"),
-  memo: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  memo: optionalNullableTrimmedString,
 });
 
 export async function POST(request: NextRequest) {

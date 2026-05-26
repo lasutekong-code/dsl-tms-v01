@@ -8,6 +8,7 @@ import {
   flattenZodErrors,
   formatKoreanBusinessNo,
   normalizeBusinessNo,
+  optionalNullableTrimmedString,
   phoneOptionalSchema,
   requiredTrimmed,
 } from "@/lib/admin/zod-util";
@@ -21,7 +22,7 @@ const updateSchema = z.object({
   client_name: requiredTrimmed("거래처명").optional(),
   business_no: businessNoOptionalSchema,
   main_phone: phoneOptionalSchema,
-  address: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  address: optionalNullableTrimmedString,
   is_active: z.boolean().optional(),
 });
 

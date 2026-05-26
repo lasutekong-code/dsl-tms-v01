@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import { flattenZodErrors, requiredTrimmed, uuidString } from "@/lib/admin/zod-util";
+import {optionalNullableTrimmedString, flattenZodErrors, requiredTrimmed, uuidString} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ const VIS = ["admin_only", "internal", "shared"] as const;
 
 const createSchema = z.object({
   vehicle_id: uuidString,
-  memo_type: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  memo_type: optionalNullableTrimmedString,
   content: requiredTrimmed("메모 내용"),
   visibility: z.enum(VIS).optional().default("internal"),
 });

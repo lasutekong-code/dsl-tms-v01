@@ -10,6 +10,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { validatePhotoFile } from "@/lib/admin/photo-file";
 import { VEHICLE_PHOTO_TYPES } from "@/types/admin";
 
 export function VehiclePhotoUploadForm({
@@ -26,8 +27,14 @@ export function VehiclePhotoUploadForm({
 
   async function onUpload(formData: FormData) {
     const file = formData.get("file");
-    if (!(file instanceof File) || file.size === 0) {
+    if (!(file instanceof File)) {
       toast.error("파일을 선택해 주세요.");
+      return;
+    }
+
+    const fileError = validatePhotoFile(file);
+    if (fileError) {
+      toast.error(fileError);
       return;
     }
 

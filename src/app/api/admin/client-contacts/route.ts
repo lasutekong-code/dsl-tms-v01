@@ -5,6 +5,8 @@ import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
 import {
   flattenZodErrors,
+  optionalEmailSchema,
+  optionalUuidSchema,
   phoneOptionalSchema,
   requiredTrimmed,
   uuidString,
@@ -13,25 +15,13 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const optionalUuid = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => (!v ? null : v))
-  .pipe(z.union([z.null(), z.string().uuid("올바른 ID가 아닙니다.")]));
-
 const createSchema = z.object({
   client_id: uuidString,
-  center_id: optionalUuid,
+  center_id: optionalUuidSchema,
   contact_name: requiredTrimmed("담당자명"),
   phone: phoneOptionalSchema,
-  email: z
-    .string()
-    .trim()
-    .optional()
-    .transform((v) => (!v ? null : v))
-    .pipe(z.union([z.null(), z.string().email("이메일 형식이 올바르지 않습니다.")])),
-  profile_id: optionalUuid,
+  email: optionalEmailSchema,
+  profile_id: optionalUuidSchema,
   is_active: z.boolean().optional().default(true),
 });
 

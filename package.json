@@ -9,7 +9,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "test": "node --import tsx --test src/lib/vehicles/sanitize-detail.test.ts src/lib/permissions/vehicle-access.test.ts"
+    "test": "node --import tsx --test src/lib/vehicles/sanitize-detail.test.ts src/lib/permissions/vehicle-access.test.ts src/lib/admin/zod-util.test.ts"
   },
   "repository": {
     "type": "git",

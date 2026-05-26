@@ -9,6 +9,7 @@ import { AdminFormActions } from "@/components/admin/admin-form-actions";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Label } from "@/components/ui/label";
+import { validatePhotoFile } from "@/lib/admin/photo-file";
 
 export function DriverPhotoUploadForm({
   driverId,
@@ -23,8 +24,14 @@ export function DriverPhotoUploadForm({
 
   async function onUpload(formData: FormData) {
     const file = formData.get("file");
-    if (!(file instanceof File) || file.size === 0) {
+    if (!(file instanceof File)) {
       toast.error("파일을 선택해 주세요.");
+      return;
+    }
+
+    const fileError = validatePhotoFile(file);
+    if (fileError) {
+      toast.error(fileError);
       return;
     }
 

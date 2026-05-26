@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse, omitUndefined } from "@/lib/admin/api-guard";
-import { flattenZodErrors, nonNegativeIntOptional } from "@/lib/admin/zod-util";
+import {optionalNullableTrimmedString, flattenZodErrors, nonNegativeIntOptional} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 import type { VehicleSpecRow } from "@/types/database";
 import { isUuid } from "@/lib/vehicles/build-detail";
@@ -11,7 +11,7 @@ import { isUuid } from "@/lib/vehicles/build-detail";
 export const dynamic = "force-dynamic";
 
 const updateSchema = z.object({
-  special_equipment: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  special_equipment: optionalNullableTrimmedString,
   height_mm: nonNegativeIntOptional,
   length_mm: nonNegativeIntOptional,
   width_mm: nonNegativeIntOptional,

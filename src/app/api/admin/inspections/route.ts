@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import { dateYmdSchema, flattenZodErrors, uuidString } from "@/lib/admin/zod-util";
+import {optionalNullableTrimmedString, dateYmdSchema, flattenZodErrors, uuidString} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -11,9 +11,9 @@ export const dynamic = "force-dynamic";
 const createSchema = z.object({
   vehicle_id: uuidString,
   inspection_date: dateYmdSchema,
-  inspection_type: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  result: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  memo: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  inspection_type: optionalNullableTrimmedString,
+  result: optionalNullableTrimmedString,
+  memo: optionalNullableTrimmedString,
 });
 
 export async function POST(request: NextRequest) {

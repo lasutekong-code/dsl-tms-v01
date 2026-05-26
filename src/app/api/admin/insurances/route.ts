@@ -3,20 +3,23 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import { dateYmdOptionalSchema, flattenZodErrors, uuidString } from "@/lib/admin/zod-util";
+import {
+  dateYmdOptionalSchema,
+  flattenZodErrors,
+  nonNegativeFloatOptional,
+  optionalNullableTrimmedString,
+  uuidString,
+} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
 const createSchema = z.object({
   vehicle_id: uuidString,
-  insurance_company: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  insurance_rate: z.preprocess(
-    (v) => (v === "" || v === null || v === undefined ? null : v),
-    z.coerce.number().finite().nonnegative().nullable(),
-  ),
+  insurance_company: optionalNullableTrimmedString,
+  insurance_rate: nonNegativeFloatOptional,
   renewal_date: dateYmdOptionalSchema,
-  memo: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  memo: optionalNullableTrimmedString,
 });
 
 export async function POST(request: NextRequest) {

@@ -6,6 +6,8 @@ import { getAdminOrResponse } from "@/lib/admin/api-guard";
 import {
   dateYmdOptionalSchema,
   flattenZodErrors,
+  optionalNullableTrimmedString,
+  optionalUuidSchema,
   phoneSchema,
   requiredTrimmed,
 } from "@/lib/admin/zod-util";
@@ -14,20 +16,13 @@ import { isUuid } from "@/lib/vehicles/build-detail";
 
 export const dynamic = "force-dynamic";
 
-const optionalUuid = z
-  .string()
-  .trim()
-  .optional()
-  .transform((v) => (!v ? null : v))
-  .pipe(z.union([z.null(), z.string().uuid("올바른 ID가 아닙니다.")]));
-
 const updateSchema = z.object({
-  profile_id: optionalUuid.optional(),
+  profile_id: optionalUuidSchema.optional(),
   driver_name: requiredTrimmed("운전자명").optional(),
   birth_date: dateYmdOptionalSchema.optional(),
   phone: phoneSchema.optional(),
-  driver_license_no: z.string().trim().optional().transform((v) => (!v ? null : v)),
-  cargo_license_no: z.string().trim().optional().transform((v) => (!v ? null : v)),
+  driver_license_no: optionalNullableTrimmedString,
+  cargo_license_no: optionalNullableTrimmedString,
   is_active: z.boolean().optional(),
 });
 
