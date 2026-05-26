@@ -1,9 +1,8 @@
 import { redirect } from "next/navigation";
-import { getProfile } from "@/lib/auth/get-profile";
+import { getProfile, signOutIfInactiveProfile } from "@/lib/auth/get-profile";
 import { getRedirectPathForRole } from "@/lib/auth/role-redirect";
+import { INACTIVE_MESSAGE } from "@/lib/auth/messages";
 import { LoginForm } from "@/components/login/login-form";
-export const dynamic = "force-dynamic";
-
 import {
   Card,
   CardContent,
@@ -12,8 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-const INACTIVE_MESSAGE =
-  "비활성화된 계정입니다. 관리자에게 문의하십시오.";
+export const dynamic = "force-dynamic";
 
 type LoginPageProps = {
   searchParams: Promise<{ error?: string }>;
@@ -21,8 +19,9 @@ type LoginPageProps = {
 
 function resolveServerError(code: string | undefined): string | undefined {
   if (code === "inactive") return INACTIVE_MESSAGE;
-  if (code === "access_denied")
+  if (code === "access_denied") {
     return "접근 권한이 없습니다. 관리자에게 문의하세요.";
+  }
   return undefined;
 }
 
@@ -43,17 +42,20 @@ function BrandMark() {
 }
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const wasInactiveSession = await signOutIfInactiveProfile();
   const profile = await getProfile();
   const params = await searchParams;
-  const serverError = resolveServerError(params.error);
+  const serverError =
+    resolveServerError(params.error) ??
+    (wasInactiveSession ? INACTIVE_MESSAGE : undefined);
 
   if (profile?.is_active) {
     redirect(getRedirectPathForRole(profile.role));
   }
 
   return (
-    <div className="flex min-h-dvh flex-col bg-[#fafafa] lg:flex-row">
-      <aside className="hidden border-b border-[#e5e5e5] bg-white px-8 py-10 lg:flex lg:w-80 lg:flex-col lg:border-b-0 lg:border-r xl:w-96">
+    <div className="flex min-h-dvh min-w-0 flex-col overflow-x-hidden bg-[#fafafa] lg:flex-row">
+      <aside className="hidden border-b border-[#e5e5e5] bg-white px-8 py-10 lg:flex lg:w-80 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r xl:w-96">
         <BrandMark />
         <div className="mt-10 flex-1">
           <h1 className="text-xl font-semibold text-[#171717]">
@@ -69,7 +71,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         </p>
       </aside>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-10 sm:px-6">
+      <main className="flex min-w-0 flex-1 flex-col items-center justify-center px-4 py-10 sm:px-6">
         <div className="mb-8 w-full max-w-[400px] lg:hidden">
           <BrandMark />
         </div>
@@ -86,7 +88,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </CardContent>
         </Card>
 
-        <p className="mt-6 max-w-[400px] text-center text-xs text-[#737373]">
+        <p className="mt-6 w-full max-w-[400px] text-center text-xs text-[#737373]">
           허가된 사용자만 접근할 수 있습니다.
         </p>
       </main>

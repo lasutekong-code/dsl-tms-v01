@@ -2,18 +2,22 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getRedirectPathForRole, isProfileRole } from "@/lib/auth/role-redirect";
-import {
-  PROFILE_COLUMNS,
-  type ProfileRole,
-} from "@/types/database";
+import { fetchProfileByUserId } from "@/lib/auth/fetch-profile";
+import { getRedirectPathForRole } from "@/lib/auth/role-redirect";
+import { INACTIVE_MESSAGE } from "@/lib/auth/messages";
 
 export type LoginState = {
   error?: string;
 };
 
-const INACTIVE_MESSAGE =
-  "비활성화된 계정입니다. 관리자에게 문의하십시오.";
+const PROFILE_ERROR_MESSAGES: Record<
+  "not_found" | "invalid_role" | "db_error",
+  string
+> = {
+  not_found: "등록된 프로필이 없습니다. 관리자에게 문의하세요.",
+  invalid_role: "유효하지 않은 계정 역할입니다. 관리자에게 문의하세요.",
+  db_error: "프로필을 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+};
 
 export async function signIn(
   _prevState: LoginState,
@@ -34,31 +38,21 @@ export async function signIn(
     return { error: "이메일 또는 비밀번호가 올바르지 않습니다." };
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from("profiles")
-    .select(PROFILE_COLUMNS)
-    .eq("id", authData.user.id)
-    .maybeSingle();
+  const profileResult = await fetchProfileByUserId(supabase, authData.user.id);
 
-  if (profileError || !profile) {
+  if (!profileResult.ok) {
     await supabase.auth.signOut();
-    return {
-      error: "등록된 프로필이 없습니다. 관리자에게 문의하세요.",
-    };
+    return { error: PROFILE_ERROR_MESSAGES[profileResult.reason] };
   }
 
-  if (!isProfileRole(profile.role)) {
-    await supabase.auth.signOut();
-    return { error: "유효하지 않은 계정 역할입니다. 관리자에게 문의하세요." };
-  }
+  const { profile } = profileResult;
 
   if (!profile.is_active) {
     await supabase.auth.signOut();
     return { error: INACTIVE_MESSAGE };
   }
 
-  const role = profile.role as ProfileRole;
-  redirect(getRedirectPathForRole(role));
+  redirect(getRedirectPathForRole(profile.role));
 }
 
 export async function signOut() {

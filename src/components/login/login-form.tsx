@@ -60,7 +60,9 @@ export function LoginForm({ serverError }: LoginFormProps) {
       </p>
 
       {errorMessage ? (
-        <Alert variant="destructive">{errorMessage}</Alert>
+        <Alert variant="destructive" role="alert" aria-live="polite">
+          {errorMessage}
+        </Alert>
       ) : null}
 
       <Button type="submit" className="w-full" size="lg" disabled={isPending}>

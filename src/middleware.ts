@@ -1,12 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { redirectWithSessionCookies } from "@/lib/supabase/middleware-redirect";
 import { createServerClient } from "@supabase/ssr";
-import {
-  PROFILE_COLUMNS,
-  type Database,
-  type ProfileRole,
-} from "@/types/database";
-import { isProfileRole } from "@/lib/auth/role-redirect";
+import { fetchProfileByUserId } from "@/lib/auth/fetch-profile";
+import type { Database, ProfileRole } from "@/types/database";
 
 const PUBLIC_PATHS = ["/login", "/auth/callback"];
 
@@ -21,10 +18,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const response = await updateSession(request);
+  const sessionResponse = await updateSession(request);
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    return response;
+    return sessionResponse;
   }
 
   const supabase = createServerClient<Database>(
@@ -35,7 +32,14 @@ export async function middleware(request: NextRequest) {
         getAll() {
           return request.cookies.getAll();
         },
-        setAll() {},
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          );
+          cookiesToSet.forEach(({ name, value, options }) =>
+            sessionResponse.cookies.set(name, value, options)
+          );
+        },
       },
     }
   );
@@ -45,41 +49,34 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (!authUser) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    return NextResponse.redirect(loginUrl);
+    return redirectWithSessionCookies(request, sessionResponse, "/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select(PROFILE_COLUMNS)
-    .eq("id", authUser.id)
-    .maybeSingle();
+  const profileResult = await fetchProfileByUserId(supabase, authUser.id);
 
-  if (
-    !profile ||
-    !profile.is_active ||
-    !isProfileRole(profile.role)
-  ) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.searchParams.set(
-      "error",
-      profile && !profile.is_active ? "inactive" : "access_denied"
-    );
+  if (!profileResult.ok) {
     await supabase.auth.signOut();
-    return NextResponse.redirect(loginUrl);
+    return redirectWithSessionCookies(request, sessionResponse, "/login", {
+      error: "access_denied",
+    });
+  }
+
+  const { profile } = profileResult;
+
+  if (!profile.is_active) {
+    await supabase.auth.signOut();
+    return redirectWithSessionCookies(request, sessionResponse, "/login", {
+      error: "inactive",
+    });
   }
 
   const role = profile.role as ProfileRole;
 
   if (pathname.startsWith("/admin") && role !== "admin") {
-    const searchUrl = request.nextUrl.clone();
-    searchUrl.pathname = "/search";
-    return NextResponse.redirect(searchUrl);
+    return redirectWithSessionCookies(request, sessionResponse, "/search");
   }
 
-  return response;
+  return sessionResponse;
 }
 
 export const config = {
