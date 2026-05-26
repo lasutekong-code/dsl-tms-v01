@@ -1,128 +1,101 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Building2, Calendar, Car, Gauge, Shield, User, Wrench } from "lucide-react";
 
-import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatDisplayDate, formatStatusLabel } from "@/lib/vehicles/format";
+import type { VehicleSearchResult } from "@/types/vehicle";
 
-type PhotoRef = {
-  bucket: string;
-  path: string;
+type VehicleResultCardProps = {
+  vehicle: VehicleSearchResult;
 };
 
-export type VehicleSearchResult = {
-  id: string;
-  plateNumber: string;
-  vehicleNumber: string | null;
-  vehicleType: string | null;
-  clientName: string | null;
-  centerName: string | null;
-  driverId: string | null;
-  driverName: string | null;
-  driverPhone: string | null;
-  vehiclePhotos: PhotoRef[];
-  driverPhoto: PhotoRef | null;
-};
-
-async function requestSignedUrl(photo: PhotoRef, vehicleId: string, driverId?: string | null) {
-  const response = await fetch("/api/photos/signed-url", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      bucket: photo.bucket,
-      path: photo.path,
-      vehicleId,
-      driverId
-    })
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const body = (await response.json()) as { signedUrl?: string };
-  return body.signedUrl ?? null;
+function InfoRow({ icon: Icon, label, value }: { icon: typeof User; label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-2 text-sm">
+      <Icon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+      <div className="min-w-0">
+        <span className="text-muted-foreground">{label}</span>
+        <p className="truncate font-medium text-[#404040]">{value}</p>
+      </div>
+    </div>
+  );
 }
 
-export function VehicleResultCard({ result }: { result: VehicleSearchResult }) {
-  const [vehicleUrls, setVehicleUrls] = useState<string[]>([]);
-  const [driverUrl, setDriverUrl] = useState<string | null>(null);
-  const vehiclePhotos = useMemo(() => result.vehiclePhotos.slice(0, 3), [result.vehiclePhotos]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    async function loadPhotos() {
-      const urls = await Promise.all(
-        vehiclePhotos.map((photo) => requestSignedUrl(photo, result.id, result.driverId))
-      );
-
-      const driverPhotoUrl = result.driverPhoto
-        ? await requestSignedUrl(result.driverPhoto, result.id, result.driverId)
-        : null;
-
-      if (mounted) {
-        setVehicleUrls(urls.filter(Boolean) as string[]);
-        setDriverUrl(driverPhotoUrl);
-      }
-    }
-
-    loadPhotos();
-
-    return () => {
-      mounted = false;
-    };
-  }, [result.driverId, result.driverPhoto, result.id, vehiclePhotos]);
+export function VehicleResultCard({ vehicle }: VehicleResultCardProps) {
+  const statusLabel = formatStatusLabel(vehicle.status);
 
   return (
-    <Card className="stack">
-      <div>
-        <Link href={`/vehicles/${result.id}`} style={{ fontSize: 20, fontWeight: 800 }}>
-          {result.plateNumber}
-        </Link>
-        <p style={{ color: "var(--muted)", margin: "6px 0 0" }}>
-          {result.clientName ?? "거래처 미지정"} / {result.centerName ?? "센터 미지정"}
-        </p>
-      </div>
-
-      <div className="grid" style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
-        {vehicleUrls.length > 0
-          ? vehicleUrls.map((url) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                alt={`${result.plateNumber} 차량 사진`}
-                key={url}
-                src={url}
-                style={{ aspectRatio: "4 / 3", borderRadius: 12, objectFit: "cover", width: "100%" }}
-              />
-            ))
-          : [0, 1, 2].map((index) => (
-              <div
-                aria-label="차량 사진 없음"
-                key={index}
-                style={{ aspectRatio: "4 / 3", background: "#eef2f7", borderRadius: 12 }}
-              />
-            ))}
-      </div>
-
-      <div style={{ alignItems: "center", display: "flex", gap: 12 }}>
-        {driverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            alt={`${result.driverName ?? "운전자"} 사진`}
-            src={driverUrl}
-            style={{ borderRadius: "50%", height: 56, objectFit: "cover", width: 56 }}
-          />
-        ) : (
-          <div style={{ background: "#eef2f7", borderRadius: "50%", height: 56, width: 56 }} />
-        )}
-        <div>
-          <div style={{ fontWeight: 700 }}>{result.driverName ?? "운전자 미지정"}</div>
-          <div style={{ color: "var(--muted)", fontSize: 14 }}>{result.driverPhone ?? "연락처 비공개"}</div>
+    <Link className="group block h-full" href={`/vehicles/${vehicle.vehicle_id}`}>
+      <Card className="flex h-full flex-col overflow-hidden transition-shadow hover:shadow-md">
+        <div className="flex h-40 items-center justify-center bg-gradient-to-br from-[#f5f5f5] to-[#e5e5e5]">
+          <Car className="size-14 text-[#a3a3a3]" />
         </div>
-      </div>
-    </Card>
+
+        <CardContent className="flex flex-1 flex-col gap-4 p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-lg font-semibold text-foreground group-hover:text-primary">
+                {vehicle.vehicle_no ?? "차량번호 미등록"}
+              </p>
+              <p className="mt-1 truncate text-sm text-muted-foreground">
+                {vehicle.car_name ?? "차명 미등록"}
+                {vehicle.tonnage ? ` · ${vehicle.tonnage}` : ""}
+                {vehicle.model_year ? ` · ${vehicle.model_year}년식` : ""}
+              </p>
+            </div>
+            <Badge>{statusLabel}</Badge>
+          </div>
+
+          <div className="grid gap-3">
+            <InfoRow
+              icon={User}
+              label="운전자"
+              value={
+                vehicle.driver_name
+                  ? `${vehicle.driver_name}${vehicle.driver_phone ? ` (${vehicle.driver_phone})` : ""}`
+                  : "운전자 미지정"
+              }
+            />
+            <InfoRow
+              icon={Building2}
+              label="거래처 / 센터"
+              value={`${vehicle.client_name ?? "거래처 미지정"} / ${vehicle.center_name ?? "센터 미지정"}`}
+            />
+            <InfoRow
+              icon={Wrench}
+              label="특장상태"
+              value={vehicle.special_equipment ?? "미등록"}
+            />
+          </div>
+
+          <div className="mt-auto grid gap-2 border-t border-[#f5f5f5] pt-4 text-xs text-muted-foreground">
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1">
+                <Shield className="size-3.5" />
+                보험갱신일
+              </span>
+              <span>{formatDisplayDate(vehicle.insurance_renewal_date)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="size-3.5" />
+                최근 차량점검일
+              </span>
+              <span>{formatDisplayDate(vehicle.latest_inspection_date)}</span>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="inline-flex items-center gap-1">
+                <Gauge className="size-3.5" />
+                톤급
+              </span>
+              <span>{vehicle.tonnage ?? "미등록"}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </Link>
   );
 }

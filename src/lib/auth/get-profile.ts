@@ -1,24 +1,9 @@
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
-import type { Database, UserRole } from "@/types/database";
 
-export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
-
-export const roleLabels: Record<UserRole, string> = {
-  admin: "관리자",
-  client_contact: "거래처 담당자",
-  owner: "사업주",
-  driver: "운전자"
-};
-
-export function getRoleHomePath(role: UserRole) {
-  if (role === "admin") {
-    return "/admin/vehicles";
-  }
-
-  return "/search";
-}
+export type { Profile } from "@/lib/auth/profile-types";
+export { getRoleHomePath, roleLabels } from "@/lib/auth/profile-types";
 
 export async function getProfile(userId?: string) {
   const supabase = await createClient();
@@ -43,6 +28,10 @@ export async function requireProfile() {
 
   if (!profile) {
     redirect("/login");
+  }
+
+  if (profile.is_active === false) {
+    redirect("/login?error=inactive");
   }
 
   return profile;

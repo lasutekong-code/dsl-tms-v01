@@ -1,19 +1,27 @@
-import type { HTMLAttributes, PropsWithChildren } from "react";
+import * as React from "react";
 
-export function Card({ children, style, ...props }: PropsWithChildren<HTMLAttributes<HTMLDivElement>>) {
+import { cn } from "@/lib/utils";
+
+function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
+      className={cn("rounded-lg border border-border bg-card text-card-foreground shadow-sm", className)}
+      data-slot="card"
       {...props}
-      style={{
-        background: "var(--card)",
-        border: "1px solid var(--border)",
-        borderRadius: 16,
-        boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
-        padding: 20,
-        ...style
-      }}
-    >
-      {children}
-    </div>
+    />
   );
 }
+
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return <div className={cn("flex flex-col gap-1.5 p-5", className)} data-slot="card-header" {...props} />;
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return <div className={cn("font-semibold leading-none", className)} data-slot="card-title" {...props} />;
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return <div className={cn("p-5 pt-0", className)} data-slot="card-content" {...props} />;
+}
+
+export { Card, CardHeader, CardTitle, CardContent };

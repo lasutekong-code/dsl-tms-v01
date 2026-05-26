@@ -1,165 +1,99 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { getProfile } from "@/lib/auth/get-profile";
-import { canViewVehicle } from "@/lib/permissions/can-view-vehicle";
 import { createClient } from "@/lib/supabase/server";
-import { maskPhone } from "@/lib/utils/mask-sensitive";
+import {
+  buildVehicleSearchFilter,
+  getAccessScope,
+  normalizeSearchQuery,
+  parseUserRole,
+  recordSearchLog,
+  resolveCanViewSensitive,
+  SEARCH_SELECT_COLUMNS,
+  toVehicleSearchResult,
+} from "@/lib/vehicles/search-api";
+import type { VehicleCardViewRow, VehicleSearchResult } from "@/types/vehicle";
 
-type VehicleRow = {
-  id: string;
-  plate_number: string;
-  vehicle_number: string | null;
-  vehicle_type: string | null;
-};
-
-type AssignmentRow = {
-  vehicle_id: string;
-  driver_id: string | null;
-  clients?: { name: string | null } | null;
-  centers?: { name: string | null } | null;
-  drivers?: { id: string; name: string | null; phone: string | null } | null;
-};
-
-type VehiclePhotoRow = {
-  vehicle_id: string;
-  bucket: string | null;
-  storage_path: string;
-  sort_order: number | null;
-};
-
-type DriverPhotoRow = {
-  driver_id: string;
-  bucket: string | null;
-  storage_path: string;
-};
-
-function unique(values: Array<string | null | undefined>) {
-  return [...new Set(values.filter(Boolean) as string[])];
-}
+export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
-  const q = request.nextUrl.searchParams.get("q")?.trim();
+  try {
+    const q = normalizeSearchQuery(request.nextUrl.searchParams.get("q"));
 
-  if (!q) {
-    return NextResponse.json({ results: [] });
-  }
-
-  const supabase = (await createClient()) as ReturnType<typeof createClient> extends Promise<infer T> ? T : never;
-  const {
-    data: { user }
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const profile = await getProfile(user.id);
-
-  if (!profile) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 403 });
-  }
-
-  await supabase.from("search_logs").insert({ user_id: user.id, query: q });
-
-  const pattern = `%${q}%`;
-  const [vehicleMatches, clientMatches, driverMatches] = await Promise.all([
-    supabase
-      .from("vehicles")
-      .select("id")
-      .or(`plate_number.ilike.${pattern},vehicle_number.ilike.${pattern}`)
-      .limit(50),
-    supabase
-      .from("vehicle_assignments")
-      .select("vehicle_id, clients!inner(name)")
-      .ilike("clients.name", pattern)
-      .limit(50),
-    supabase
-      .from("vehicle_assignments")
-      .select("vehicle_id, drivers!inner(name)")
-      .ilike("drivers.name", pattern)
-      .limit(50)
-  ]);
-
-  const vehicleIds = unique([
-    ...((vehicleMatches.data ?? []) as Array<{ id: string }>).map((item) => item.id),
-    ...((clientMatches.data ?? []) as Array<{ vehicle_id: string }>).map((item) => item.vehicle_id),
-    ...((driverMatches.data ?? []) as Array<{ vehicle_id: string }>).map((item) => item.vehicle_id)
-  ]);
-
-  if (vehicleIds.length === 0) {
-    return NextResponse.json({ results: [] });
-  }
-
-  const allowedVehicleIds = [];
-
-  for (const vehicleId of vehicleIds) {
-    if (await canViewVehicle(profile, vehicleId)) {
-      allowedVehicleIds.push(vehicleId);
+    if (!q) {
+      return NextResponse.json({ error: "검색어가 필요합니다." }, { status: 400 });
     }
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, role, is_active")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      return NextResponse.json({ error: "프로필을 불러오지 못했습니다." }, { status: 500 });
+    }
+
+    if (!profile || profile.is_active === false) {
+      return NextResponse.json({ error: "비활성화된 계정입니다." }, { status: 403 });
+    }
+
+    const role = parseUserRole(profile.role);
+
+    if (!role) {
+      return NextResponse.json({ error: "허용되지 않은 역할입니다." }, { status: 403 });
+    }
+
+    const scope = await getAccessScope(supabase, user.id, role);
+
+    if (scope.kind === "clients" && scope.clientIds.length === 0) {
+      await recordSearchLog(supabase, user.id, q, 0);
+      return NextResponse.json<VehicleSearchResult[]>([]);
+    }
+
+    if (scope.kind === "vehicles" && scope.vehicleIds.length === 0) {
+      await recordSearchLog(supabase, user.id, q, 0);
+      return NextResponse.json<VehicleSearchResult[]>([]);
+    }
+
+    let query = supabase
+      .from("vehicle_card_view")
+      .select(SEARCH_SELECT_COLUMNS)
+      .or(buildVehicleSearchFilter(q));
+
+    if (scope.kind === "clients") {
+      query = query.in("client_id", scope.clientIds);
+    }
+
+    if (scope.kind === "vehicles") {
+      query = query.in("vehicle_id", scope.vehicleIds);
+    }
+
+    const { data, error: searchError } = await query;
+
+    if (searchError) {
+      console.error("vehicle search failed", searchError);
+      return NextResponse.json({ error: "차량 검색에 실패했습니다." }, { status: 500 });
+    }
+
+    const results = ((data ?? []) as VehicleCardViewRow[]).map((row) =>
+      toVehicleSearchResult(row, resolveCanViewSensitive(row, scope)),
+    );
+
+    await recordSearchLog(supabase, user.id, q, results.length);
+
+    return NextResponse.json<VehicleSearchResult[]>(results);
+  } catch (error) {
+    console.error("/api/vehicles/search failed", error);
+    return NextResponse.json({ error: "검색 중 오류가 발생했습니다." }, { status: 500 });
   }
-
-  if (allowedVehicleIds.length === 0) {
-    return NextResponse.json({ results: [] });
-  }
-
-  const [vehiclesResult, assignmentsResult, photosResult] = await Promise.all([
-    supabase
-      .from("vehicles")
-      .select("id, plate_number, vehicle_number, vehicle_type")
-      .in("id", allowedVehicleIds)
-      .limit(50),
-    supabase
-      .from("vehicle_assignments")
-      .select("vehicle_id, driver_id, clients(name), centers(name), drivers(id, name, phone)")
-      .in("vehicle_id", allowedVehicleIds),
-    supabase
-      .from("vehicle_photos")
-      .select("vehicle_id, bucket, storage_path, sort_order")
-      .in("vehicle_id", allowedVehicleIds)
-      .order("sort_order", { ascending: true })
-  ]);
-
-  const vehicles = (vehiclesResult.data ?? []) as VehicleRow[];
-  const assignments = (assignmentsResult.data ?? []) as AssignmentRow[];
-  const vehiclePhotos = (photosResult.data ?? []) as VehiclePhotoRow[];
-  const driverIds = unique(assignments.map((assignment) => assignment.driver_id));
-  const driverPhotosResult =
-    driverIds.length > 0
-      ? await supabase.from("driver_photos").select("driver_id, bucket, storage_path").in("driver_id", driverIds)
-      : { data: [] };
-  const driverPhotos = (driverPhotosResult.data ?? []) as DriverPhotoRow[];
-
-  const results = vehicles.map((vehicle) => {
-    const assignment = assignments.find((item) => item.vehicle_id === vehicle.id);
-    const driverPhoto = assignment?.driver_id
-      ? driverPhotos.find((photo) => photo.driver_id === assignment.driver_id)
-      : null;
-
-    return {
-      id: vehicle.id,
-      plateNumber: vehicle.plate_number,
-      vehicleNumber: vehicle.vehicle_number,
-      vehicleType: vehicle.vehicle_type,
-      clientName: assignment?.clients?.name ?? null,
-      centerName: assignment?.centers?.name ?? null,
-      driverId: assignment?.drivers?.id ?? assignment?.driver_id ?? null,
-      driverName: assignment?.drivers?.name ?? null,
-      driverPhone: profile.role === "admin" ? (assignment?.drivers?.phone ?? null) : maskPhone(assignment?.drivers?.phone),
-      vehiclePhotos: vehiclePhotos
-        .filter((photo) => photo.vehicle_id === vehicle.id)
-        .slice(0, 3)
-        .map((photo) => ({
-          bucket: photo.bucket ?? "vehicle-photos",
-          path: photo.storage_path
-        })),
-      driverPhoto: driverPhoto
-        ? {
-            bucket: driverPhoto.bucket ?? "driver-photos",
-            path: driverPhoto.storage_path
-          }
-        : null
-    };
-  });
-
-  return NextResponse.json({ results });
 }

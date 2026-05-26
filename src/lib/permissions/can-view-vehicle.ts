@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { Profile } from "@/lib/auth/get-profile";
+import type { Profile } from "@/lib/auth/profile-types";
 
 export async function canViewVehicle(profile: Profile, vehicleId: string) {
   if (profile.role === "admin") {
@@ -8,7 +8,7 @@ export async function canViewVehicle(profile: Profile, vehicleId: string) {
 
   const supabase = await createClient();
 
-  if (profile.role === "client_contact") {
+  if (profile.role === "client_manager" || profile.role === "client_contact") {
     const { data: assignment } = await supabase
       .from("vehicle_assignments")
       .select("client_id")

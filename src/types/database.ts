@@ -6,7 +6,13 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type UserRole = "admin" | "client_contact" | "owner" | "driver";
+export type UserRole =
+  | "admin"
+  | "client_manager"
+  | "client_contact"
+  | "owner"
+  | "driver"
+  | "staff";
 
 type Row<T> = T;
 type Insert<T> = Partial<T>;
@@ -21,6 +27,7 @@ export type Database = {
           email: string | null;
           full_name: string | null;
           role: UserRole;
+          is_active: boolean | null;
           created_at: string | null;
           updated_at: string | null;
         }>;
@@ -192,19 +199,37 @@ export type Database = {
         Relationships: [];
       };
       user_client_access: {
-        Row: Row<{ id: string; user_id: string; client_id: string; created_at: string | null }>;
+        Row: Row<{
+          id: string;
+          user_id: string;
+          client_id: string;
+          can_view_sensitive: boolean | null;
+          created_at: string | null;
+        }>;
         Insert: Insert<Database["public"]["Tables"]["user_client_access"]["Row"]>;
         Update: Update<Database["public"]["Tables"]["user_client_access"]["Row"]>;
         Relationships: [];
       };
       user_vehicle_access: {
-        Row: Row<{ id: string; user_id: string; vehicle_id: string; created_at: string | null }>;
+        Row: Row<{
+          id: string;
+          user_id: string;
+          vehicle_id: string;
+          can_view_sensitive: boolean | null;
+          created_at: string | null;
+        }>;
         Insert: Insert<Database["public"]["Tables"]["user_vehicle_access"]["Row"]>;
         Update: Update<Database["public"]["Tables"]["user_vehicle_access"]["Row"]>;
         Relationships: [];
       };
       search_logs: {
-        Row: Row<{ id: string; user_id: string | null; query: string; created_at: string | null }>;
+        Row: Row<{
+          id: string;
+          user_id: string | null;
+          query: string;
+          result_count: number | null;
+          created_at: string | null;
+        }>;
         Insert: Insert<Database["public"]["Tables"]["search_logs"]["Row"]>;
         Update: Update<Database["public"]["Tables"]["search_logs"]["Row"]>;
         Relationships: [];
@@ -216,7 +241,28 @@ export type Database = {
         Relationships: [];
       };
     };
-    Views: Record<string, never>;
+    Views: {
+      vehicle_card_view: {
+        Row: {
+          vehicle_id: string;
+          client_id: string | null;
+          vehicle_no: string | null;
+          client_name: string | null;
+          center_name: string | null;
+          driver_name: string | null;
+          driver_phone: string | null;
+          car_name: string | null;
+          tonnage: string | null;
+          model_year: string | null;
+          special_equipment: string | null;
+          insurance_renewal_date: string | null;
+          latest_inspection_date: string | null;
+          status: string | null;
+          can_view_sensitive: boolean | null;
+        };
+        Relationships: [];
+      };
+    };
     Functions: Record<string, never>;
     Enums: {
       user_role: UserRole;
