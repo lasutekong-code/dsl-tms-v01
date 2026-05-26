@@ -5,14 +5,29 @@ import { Card } from "@/components/ui/card";
 import { getProfile, getRoleHomePath } from "@/lib/auth/get-profile";
 import { createClient } from "@/lib/supabase/server";
 
+function parseSafeNext(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+    return null;
+  }
+
+  return trimmed;
+}
+
 type LoginPageProps = {
   searchParams?: Promise<{
     error?: string;
+    next?: string;
   }>;
 };
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
+  const nextPath = parseSafeNext(params?.next ?? null);
   const supabase = await createClient();
   const {
     data: { user }
@@ -29,11 +44,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   async function signIn(formData: FormData) {
     "use server";
 
+    const nextSafe = parseSafeNext(String(formData.get("next") ?? ""));
     const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
 
     if (!email || !password) {
-      redirect("/login?error=missing");
+      redirect(nextSafe ? `/login?error=missing&next=${encodeURIComponent(nextSafe)}` : "/login?error=missing");
     }
 
     const supabaseServer = await createClient();
@@ -43,7 +59,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     });
 
     if (error) {
-      redirect("/login?error=invalid");
+      redirect(nextSafe ? `/login?error=invalid&next=${encodeURIComponent(nextSafe)}` : "/login?error=invalid");
     }
 
     const {
@@ -51,7 +67,11 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     } = await supabaseServer.auth.getUser();
     const profile = await getProfile(signedInUser?.id);
 
-    redirect(profile?.role ? getRoleHomePath(profile.role) : "/dashboard");
+    const role = profile?.role ?? "";
+    const destination =
+      role === "admin" && nextSafe?.startsWith("/admin") ? nextSafe : profile?.role ? getRoleHomePath(profile.role) : "/dashboard";
+
+    redirect(destination);
   }
 
   const message =
@@ -81,7 +101,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </div>
           ) : null}
         </div>
-        <LoginForm action={signIn} />
+        <LoginForm action={signIn} defaultNext={nextPath} />
       </Card>
     </main>
   );

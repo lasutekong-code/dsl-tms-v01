@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { PropsWithChildren } from "react";
 
-import { roleLabels, type Profile } from "@/lib/auth/get-profile";
+import { roleLabels, type Profile } from "@/lib/auth/profile-display";
 
 export function AppShell({ children, profile }: PropsWithChildren<{ profile: Profile }>) {
   return (

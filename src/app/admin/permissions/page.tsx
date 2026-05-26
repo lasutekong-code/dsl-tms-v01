@@ -1,15 +1,13 @@
-import { AdminPage } from "@/components/layout/admin-page";
-import { Card } from "@/components/ui/card";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { Card, CardContent } from "@/components/ui/card";
 
-export default async function AdminPermissionsPage() {
+export default function AdminPermissionsPage() {
   return (
-    <AdminPage>
+    <div className="space-y-6">
+      <AdminPageHeader title="권한 관리" description="사용자·역할 권한 설정은 추후 연동됩니다." />
       <Card>
-        <h1 style={{ marginTop: 0 }}>권한 관리</h1>
-        <p style={{ color: "var(--muted)" }}>
-          user_client_access와 user_vehicle_access 기반 접근권한을 관리하는 화면입니다.
-        </p>
+        <CardContent className="py-8 text-sm text-slate-600">profiles 및 접근 테이블 기반 UI는 다음 단계에서 제공합니다.</CardContent>
       </Card>
-    </AdminPage>
+    </div>
   );
 }

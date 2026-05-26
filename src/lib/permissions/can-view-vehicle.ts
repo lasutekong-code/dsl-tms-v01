@@ -1,4 +1,4 @@
-import type { Profile } from "@/lib/auth/get-profile";
+import type { Profile } from "@/lib/auth/profile-display";
 import { canAccessVehicle } from "@/lib/permissions/vehicle-access";
 import { createClient } from "@/lib/supabase/server";
 

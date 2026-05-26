@@ -1,13 +1,13 @@
-import { AdminPage } from "@/components/layout/admin-page";
-import { Card } from "@/components/ui/card";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { Card, CardContent } from "@/components/ui/card";
 
-export default async function AdminLogsPage() {
+export default function AdminLogsPage() {
   return (
-    <AdminPage>
+    <div className="space-y-6">
+      <AdminPageHeader title="로그 관리" description="감사 로그 조회는 추후 연동됩니다." />
       <Card>
-        <h1 style={{ marginTop: 0 }}>감사 로그</h1>
-        <p style={{ color: "var(--muted)" }}>search_logs와 audit_logs를 확인하는 관리자 화면입니다.</p>
+        <CardContent className="py-8 text-sm text-slate-600">audit_logs 테이블 기반 목록·필터는 다음 단계에서 제공합니다.</CardContent>
       </Card>
-    </AdminPage>
+    </div>
   );
 }
