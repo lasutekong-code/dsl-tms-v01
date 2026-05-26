@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -71,7 +71,7 @@ export function AssignmentForm({
     },
   });
 
-  const clientId = form.watch("client_id");
+  const clientId = useWatch({ control: form.control, name: "client_id" });
   const centerOpts = centers.filter((c) => !clientId || c.client_id === clientId);
 
   const sel = (
@@ -196,10 +196,12 @@ export function AssignmentForm({
               <Input id="end_date" type="date" {...form.register("end_date")} />
             </div>
             <div className="flex items-center gap-2 pt-2 md:col-span-2">
-              <Checkbox
-                id="is_current"
-                checked={form.watch("is_current")}
-                onCheckedChange={(c) => form.setValue("is_current", c === true)}
+              <Controller
+                control={form.control}
+                name="is_current"
+                render={({ field }) => (
+                  <Checkbox id="is_current" checked={field.value} onCheckedChange={(c) => field.onChange(c === true)} />
+                )}
               />
               <Label htmlFor="is_current">현재 배정</Label>
             </div>

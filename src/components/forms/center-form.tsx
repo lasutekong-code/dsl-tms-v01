@@ -158,10 +158,12 @@ export function CenterForm({
               {form.formState.errors.phone ? <p className="text-sm text-red-600">{form.formState.errors.phone.message}</p> : null}
             </div>
             <div className="flex items-center gap-2 pt-6">
-              <Checkbox
-                id="is_active"
-                checked={form.watch("is_active")}
-                onCheckedChange={(c) => form.setValue("is_active", c === true)}
+              <Controller
+                control={form.control}
+                name="is_active"
+                render={({ field }) => (
+                  <Checkbox id="is_active" checked={field.value} onCheckedChange={(c) => field.onChange(c === true)} />
+                )}
               />
               <Label htmlFor="is_active">활성</Label>
             </div>

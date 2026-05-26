@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
 
@@ -191,18 +191,22 @@ export function OwnerForm({ mode, defaultValues }: { mode: "create" | "edit"; de
               <Input id="profile_id" {...form.register("profile_id")} />
             </div>
             <div className="flex items-center gap-2 pt-2">
-              <Checkbox
-                id="vat"
-                checked={form.watch("vat_filing_enabled")}
-                onCheckedChange={(c) => form.setValue("vat_filing_enabled", c === true)}
+              <Controller
+                control={form.control}
+                name="vat_filing_enabled"
+                render={({ field }) => (
+                  <Checkbox id="vat" checked={field.value} onCheckedChange={(c) => field.onChange(c === true)} />
+                )}
               />
               <Label htmlFor="vat">부가세 신고 사용</Label>
             </div>
             <div className="flex items-center gap-2 pt-2">
-              <Checkbox
-                id="is_active"
-                checked={form.watch("is_active")}
-                onCheckedChange={(c) => form.setValue("is_active", c === true)}
+              <Controller
+                control={form.control}
+                name="is_active"
+                render={({ field }) => (
+                  <Checkbox id="is_active" checked={field.value} onCheckedChange={(c) => field.onChange(c === true)} />
+                )}
               />
               <Label htmlFor="is_active">활성</Label>
             </div>
