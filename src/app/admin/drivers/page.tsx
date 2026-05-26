@@ -56,7 +56,7 @@ export default async function AdminDriversListPage({ searchParams }: PageProps) 
               <TableHead>전화</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-40" />
+              <TableHead className="w-52" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -71,6 +71,9 @@ export default async function AdminDriversListPage({ searchParams }: PageProps) 
                 <TableCell className="flex flex-wrap gap-1">
                   <Button asChild size="sm" variant="outline">
                     <Link href={`/admin/drivers/${row.id}/edit`}>수정</Link>
+                  </Button>
+                  <Button asChild size="sm" variant="ghost">
+                    <Link href={`/admin/drivers/${row.id}/edit#driver-addresses`}>주소·메모</Link>
                   </Button>
                   <Button asChild size="sm" variant="ghost">
                     <Link href={`/admin/drivers/${row.id}/photo`}>사진</Link>

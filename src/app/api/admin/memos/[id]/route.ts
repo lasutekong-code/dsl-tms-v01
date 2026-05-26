@@ -3,7 +3,11 @@ import { z } from "zod";
 
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse, omitUndefined } from "@/lib/admin/api-guard";
-import {optionalNullableTrimmedString, flattenZodErrors, requiredTrimmed} from "@/lib/admin/zod-util";
+import {
+  flattenZodErrors,
+  optionalNullableTrimmedString,
+  requiredTrimmed,
+} from "@/lib/admin/zod-util";
 import { createClient } from "@/lib/supabase/server";
 import type { MemoRow } from "@/types/database";
 import { isUuid } from "@/lib/vehicles/build-detail";
