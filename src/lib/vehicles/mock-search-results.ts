@@ -1,0 +1,36 @@
+import type { VehicleSearchResult } from "@/types/vehicle";
+
+export const mockVehicleSearchResults: VehicleSearchResult[] = [
+  {
+    vehicle_id: "00000000-0000-0000-0000-000000000001",
+    vehicle_no: "서울 82바 4591",
+    client_name: "한빛물류",
+    center_name: "수도권 동부센터",
+    driver_name: "김도현",
+    driver_phone: "010-****-5190",
+    car_name: "포터 II",
+    tonnage: "1톤",
+    model_year: "2022",
+    special_equipment: "냉동탑",
+    insurance_renewal_date: "2025-12-31",
+    latest_inspection_date: "2025-02-18",
+    status: "운행중",
+    can_view_sensitive: false,
+  },
+  {
+    vehicle_id: "00000000-0000-0000-0000-000000000002",
+    vehicle_no: "경기 91아 7032",
+    client_name: "푸른식자재",
+    center_name: "성남 식자재센터",
+    driver_name: "이민준",
+    driver_phone: "010-****-2271",
+    car_name: "봉고 III",
+    tonnage: "1.2톤",
+    model_year: "2021",
+    special_equipment: "윙바디",
+    insurance_renewal_date: "2026-02-28",
+    latest_inspection_date: "2024-09-01",
+    status: "운행중",
+    can_view_sensitive: false,
+  },
+];
