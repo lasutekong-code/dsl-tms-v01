@@ -1,0 +1,114 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+import { insertAuditLog } from "@/lib/admin/audit-log";
+import { getAdminOrResponse } from "@/lib/admin/api-guard";
+import {
+  businessNoOptionalSchema,
+  flattenZodErrors,
+  formatKoreanBusinessNo,
+  normalizeBusinessNo,
+  optionalNullableTrimmedString,
+  phoneOptionalSchema,
+  requiredTrimmed,
+} from "@/lib/admin/zod-util";
+import { createClient } from "@/lib/supabase/server";
+import type { ClientRow } from "@/types/database";
+import { isUuid } from "@/lib/vehicles/build-detail";
+
+export const dynamic = "force-dynamic";
+
+const updateSchema = z.object({
+  client_name: requiredTrimmed("거래처명").optional(),
+  business_no: businessNoOptionalSchema,
+  main_phone: phoneOptionalSchema,
+  address: optionalNullableTrimmedString,
+  is_active: z.boolean().optional(),
+});
+
+async function findDuplicateBusinessNo(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  normalized: string | null,
+  excludeId?: string,
+): Promise<string | null> {
+  if (!normalized) {
+    return null;
+  }
+
+  const { data: rows, error } = await supabase.from("clients").select("id, business_no");
+  if (error) {
+    return "사업자등록번호 중복 여부를 확인하지 못했습니다.";
+  }
+
+  for (const row of rows ?? []) {
+    if (excludeId && row.id === excludeId) {
+      continue;
+    }
+
+    if (normalizeBusinessNo(row.business_no) === normalized) {
+      return "이미 등록된 사업자등록번호입니다.";
+    }
+  }
+
+  return null;
+}
+
+type RouteContext = { params: Promise<{ id: string }> };
+
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  const gate = await getAdminOrResponse();
+  if (!gate.ok) {
+    return gate.response;
+  }
+
+  const { id } = await context.params;
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: "잘못된 ID입니다." }, { status: 400 });
+  }
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "JSON 본문이 필요합니다." }, { status: 400 });
+  }
+
+  const parsed = updateSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "입력값을 확인해 주세요.", fields: flattenZodErrors(parsed.error) }, { status: 400 });
+  }
+
+  if (Object.keys(parsed.data).length === 0) {
+    return NextResponse.json({ error: "변경할 값이 없습니다." }, { status: 400 });
+  }
+
+  const supabase = await createClient();
+  const patch: Record<string, unknown> = { ...parsed.data };
+
+  if ("business_no" in patch) {
+    const normalizedBn = normalizeBusinessNo(patch.business_no as string | null);
+    const dupMsg = await findDuplicateBusinessNo(supabase, normalizedBn, id);
+    if (dupMsg) {
+      return NextResponse.json({ error: dupMsg, fields: { business_no: [dupMsg] } }, { status: 409 });
+    }
+
+    patch.business_no = normalizedBn ? formatKoreanBusinessNo(normalizedBn) : null;
+  }
+
+  const { data, error } = await supabase.from("clients").update(patch as Partial<ClientRow>).eq("id", id).select("*").maybeSingle();
+
+  if (error || !data) {
+    return NextResponse.json({ error: "수정에 실패했습니다." }, { status: 500 });
+  }
+
+  await insertAuditLog(supabase, {
+    profileId: gate.admin.profileId,
+    userId: gate.admin.userId,
+    action: "client.update",
+    targetTable: "clients",
+    targetId: id,
+    metadata: { client_name: data.client_name },
+  });
+
+  return NextResponse.json({ data });
+}
