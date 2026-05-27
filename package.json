@@ -10,7 +10,8 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "node --import tsx --test src/lib/vehicles/sanitize-detail.test.ts src/lib/permissions/vehicle-access.test.ts src/lib/admin/zod-util.test.ts",
-    "env:sync": "node scripts/ensure-env-local.mjs"
+    "env:sync": "node scripts/ensure-env-local.mjs",
+    "create-admin": "node scripts/create-admin.mjs"
   },
   "repository": {
     "type": "git",
