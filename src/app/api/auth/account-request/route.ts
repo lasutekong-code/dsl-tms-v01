@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
 import { isUserRole } from "@/lib/auth/login-roles";
+import { getProfileByEmail } from "@/lib/auth/profile-by-email";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -38,12 +39,7 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, email, is_active")
-    .eq("email", parsed.data.email)
-    .maybeSingle();
+  const { profile } = await getProfileByEmail(parsed.data.email);
 
   const requestMessage =
     parsed.data.message?.trim() ||

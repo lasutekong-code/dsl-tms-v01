@@ -41,6 +41,10 @@ function successMessage(code: string | undefined): string | null {
       return "가입 신청이 완료되었습니다. 관리자 승인 후 로그인할 수 있습니다.";
     case "request_submitted":
       return "요청이 접수되었습니다. 관리자 확인 후 안내드립니다.";
+    case "password_reset_sent":
+      return "비밀번호 재설정 메일을 발송했습니다. 메일함(스팸함 포함)의 링크로 새 비밀번호를 설정해 주세요.";
+    case "password_reset_done":
+      return "비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.";
     default:
       return null;
   }
