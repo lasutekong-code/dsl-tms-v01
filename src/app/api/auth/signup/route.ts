@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
   if (role === "admin") {
     return NextResponse.json(
-      { error: "관리자 계정은 관리자 승인을 통해서만 생성할 수 있습니다. 아이디 찾기로 요청해 주세요." },
+      { error: "관리자 계정은 공개 가입으로 만들 수 없습니다. 시스템 관리자에게 계정 생성을 요청해 주세요." },
       { status: 400 },
     );
   }

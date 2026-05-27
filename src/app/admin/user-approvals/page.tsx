@@ -1,5 +1,8 @@
+import Link from "next/link";
+
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { UserApprovalsPanel } from "@/components/admin/user-approvals-panel";
+import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminUserApprovalsPage() {
@@ -24,6 +27,11 @@ export default async function AdminUserApprovalsPage() {
       <AdminPageHeader
         title="사용자 승인"
         description="신규 가입 및 아이디·비밀번호 찾기 요청을 검토하고 로그인을 승인합니다."
+        actions={
+          <Button asChild>
+            <Link href="/admin/admins/new">관리자 계정 생성</Link>
+          </Button>
+        }
       />
       <UserApprovalsPanel
         pendingUsers={(pendingUsers ?? []).map((u) => ({
