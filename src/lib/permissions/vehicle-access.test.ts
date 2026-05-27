@@ -68,7 +68,7 @@ test("admin can access any vehicle", async () => {
   const supabase = createMockSupabase({});
   const allowed = await canAccessVehicle(
     supabase,
-    { id: "u1", role: "admin", is_active: true, full_name: null, email: null },
+    { id: "u1", role: "admin", is_active: true, name: null, email: null },
     "v1",
   );
   assert.equal(allowed, true);
@@ -78,7 +78,7 @@ test("client_manager requires matching client access", async () => {
   const supabase = createMockSupabase({ vehicleClientId: "client-1", clientAccess: true });
   const allowed = await canAccessVehicle(
     supabase,
-    { id: "u1", role: "client_manager", is_active: true, full_name: null, email: null },
+    { id: "u1", role: "client_manager", is_active: true, name: null, email: null },
     "v1",
     "client-1",
   );
@@ -89,7 +89,7 @@ test("driver requires vehicle access row", async () => {
   const supabase = createMockSupabase({ vehicleAccess: true });
   const allowed = await canAccessVehicle(
     supabase,
-    { id: "u1", role: "driver", is_active: true, full_name: null, email: null },
+    { id: "u1", role: "driver", is_active: true, name: null, email: null },
     "v1",
   );
   assert.equal(allowed, true);
@@ -99,7 +99,7 @@ test("owner without vehicle access is denied", async () => {
   const supabase = createMockSupabase({ vehicleAccess: false });
   const allowed = await canAccessVehicle(
     supabase,
-    { id: "u1", role: "owner", is_active: true, full_name: null, email: null },
+    { id: "u1", role: "owner", is_active: true, name: null, email: null },
     "v1",
   );
   assert.equal(allowed, false);

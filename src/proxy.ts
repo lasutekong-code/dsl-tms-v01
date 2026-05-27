@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 import type { Database } from "@/types/database";
 
 const AUTH_REQUIRED_PREFIXES = ["/vehicles", "/search", "/dashboard", "/admin"];
-const AUTH_EXEMPT_PATHS = ["/login", "/auth"];
+const AUTH_EXEMPT_PATHS = ["/login", "/auth", "/api/auth"];
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({

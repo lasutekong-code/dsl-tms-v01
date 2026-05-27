@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { mapProfileRow } from "@/lib/auth/map-profile-row";
 import { createClient } from "@/lib/supabase/server";
 
 export type { Profile } from "./profile-display";
@@ -23,7 +24,7 @@ export async function getProfile(userId?: string) {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, role, is_active, full_name, email")
+    .select("id, role, is_active, name, email, phone")
     .eq("id", id)
     .maybeSingle();
 
@@ -32,7 +33,7 @@ export async function getProfile(userId?: string) {
     return null;
   }
 
-  return data;
+  return data ? mapProfileRow(data) : null;
 }
 
 export async function requireProfile() {

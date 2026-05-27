@@ -4,5 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function canViewVehicle(profile: Profile, vehicleId: string) {
   const supabase = await createClient();
-  return canAccessVehicle(supabase, profile, vehicleId);
+  return canAccessVehicle(
+    supabase,
+    {
+      id: profile.id,
+      role: profile.role,
+      is_active: profile.is_active,
+      name: profile.full_name,
+      email: profile.email,
+    },
+    vehicleId,
+  );
 }

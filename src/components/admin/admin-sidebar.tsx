@@ -16,6 +16,7 @@ const NAV = [
   { href: "/admin/inspections", label: "점검 관리" },
   { href: "/admin/contracts", label: "계약 관리" },
   { href: "/admin/photos", label: "사진 관리" },
+  { href: "/admin/user-approvals", label: "사용자 승인" },
   { href: "/admin/permissions", label: "권한 관리" },
   { href: "/admin/logs", label: "로그 관리" },
 ] as const;

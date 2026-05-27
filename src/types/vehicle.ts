@@ -118,8 +118,11 @@ export type ProfileRow = {
   id: string;
   role: UserRole | string | null;
   is_active: boolean | null;
-  full_name: string | null;
+  name: string | null;
+  phone?: string | null;
   email: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export type ClientAccessRow = {
