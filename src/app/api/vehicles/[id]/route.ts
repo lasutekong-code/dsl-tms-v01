@@ -80,19 +80,20 @@ export async function GET(
     return NextResponse.json(detail satisfies VehicleDetail);
   }
 
-  const { data: viewRow, error: viewError } = await supabase
+  const { data: viewRows, error: viewError } = await supabase
     .from("vehicle_card_view")
     .select("*")
     .eq("vehicle_id", id)
-    .maybeSingle();
+    .limit(10);
 
   if (viewError) {
     return NextResponse.json({ error: "Failed to load vehicle." }, { status: 500 });
   }
 
-  if (!viewRow) {
+  if (!viewRows || viewRows.length === 0) {
     return NextResponse.json({ error: "Vehicle not found." }, { status: 404 });
   }
+  const viewRow = viewRows[0];
 
   const hasAccess = await canAccessVehicle(supabase, profile, id, viewRow.client_id ? String(viewRow.client_id) : null);
 

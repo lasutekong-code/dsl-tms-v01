@@ -44,11 +44,12 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createClient();
   const insertRow = {
-    target_table: parsed.data.target_table,
-    target_id: parsed.data.target_id,
+    vehicle_id: parsed.data.target_table === "vehicles" ? parsed.data.target_id : null,
+    driver_id: parsed.data.target_table === "drivers" ? parsed.data.target_id : null,
     memo_type: parsed.data.memo_type ?? null,
     content: parsed.data.content,
     visibility: parsed.data.visibility ?? "internal",
+    created_by: gate.admin.profileId,
   };
 
   const { data, error } = await supabase.from("memos").insert(insertRow).select("*").single();

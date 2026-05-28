@@ -43,7 +43,8 @@ export function InsuranceForm({
     defaultValues: {
       vehicle_id: defaultValues?.vehicle_id ?? "",
       insurance_company: defaultValues?.insurance_company ?? "",
-      insurance_rate: defaultValues?.insurance_rate != null ? String(defaultValues.insurance_rate) : "",
+      insurance_rate:
+        defaultValues?.insurance_rate_text ?? (defaultValues?.insurance_rate != null ? String(defaultValues.insurance_rate) : ""),
       renewal_date: defaultValues?.renewal_date?.slice(0, 10) ?? "",
       memo: defaultValues?.memo ?? "",
     },
@@ -52,21 +53,10 @@ export function InsuranceForm({
   async function onSubmit(values: InsuranceFormValues) {
     setPending(true);
     try {
-      let insurance_rate: number | null = null;
-      if (values.insurance_rate?.trim()) {
-        const rate = Number.parseFloat(values.insurance_rate);
-        if (!Number.isFinite(rate) || rate < 0) {
-          form.setError("insurance_rate", { message: "요율은 0 이상이어야 합니다." });
-          return;
-        }
-
-        insurance_rate = rate;
-      }
-
       const body = {
         vehicle_id: values.vehicle_id,
         insurance_company: values.insurance_company?.trim() ? values.insurance_company.trim() : null,
-        insurance_rate,
+        insurance_rate_text: values.insurance_rate?.trim() ? values.insurance_rate.trim() : null,
         renewal_date: values.renewal_date?.trim() ? values.renewal_date.trim() : null,
         memo: values.memo?.trim() ? values.memo.trim() : null,
       };
@@ -126,8 +116,8 @@ export function InsuranceForm({
               <Input id="insurance_company" {...form.register("insurance_company")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="insurance_rate">요율</Label>
-              <Input id="insurance_rate" type="number" min={0} step="0.01" {...form.register("insurance_rate")} />
+              <Label htmlFor="insurance_rate">보험요율(대인/일반/특할/적재물)</Label>
+              <Input id="insurance_rate" {...form.register("insurance_rate")} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="renewal_date">갱신일</Label>

@@ -24,6 +24,24 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
     .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to);
+  const vehicleIds = [...new Set((rows ?? []).map((r) => r.vehicle_id))];
+  const ownerIds = [...new Set((rows ?? []).map((r) => r.owner_id))];
+  const clientIds = [...new Set((rows ?? []).map((r) => r.client_id))];
+  const [{ data: vehicles }, { data: owners }, { data: clients }] = await Promise.all([
+    vehicleIds.length > 0
+      ? supabase.from("vehicles").select("id, vehicle_no").in("id", vehicleIds)
+      : Promise.resolve({ data: [] as { id: string; vehicle_no: string | null }[] }),
+    ownerIds.length > 0
+      ? supabase.from("owners").select("id, owner_name").in("id", ownerIds)
+      : Promise.resolve({ data: [] as { id: string; owner_name: string | null }[] }),
+    clientIds.length > 0
+      ? supabase.from("clients").select("id, client_name").in("id", clientIds)
+      : Promise.resolve({ data: [] as { id: string; client_name: string | null }[] }),
+  ]);
+  const vehicleById = new Map((vehicles ?? []).map((v) => [v.id, v.vehicle_no ?? "—"]));
+  const ownerById = new Map((owners ?? []).map((o) => [o.id, o.owner_name ?? "—"]));
+  const clientById = new Map((clients ?? []).map((c) => [c.id, c.client_name ?? "—"]));
+  const contractTypeLabel = (value: string) => (value === "service" ? "용역" : value === "consignment" ? "위수탁" : value);
 
   if (error) {
     return <p className="text-sm text-red-600">목록을 불러오지 못했습니다.</p>;
@@ -48,7 +66,10 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>유형</TableHead>
+              <TableHead>계약유형</TableHead>
+              <TableHead>사업주</TableHead>
+              <TableHead>거래처</TableHead>
+              <TableHead>차량번호</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>시작일</TableHead>
               <TableHead>종료일</TableHead>
@@ -59,7 +80,14 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell>{row.contract_type}</TableCell>
+                <TableCell>{contractTypeLabel(row.contract_type)}</TableCell>
+                <TableCell>{ownerById.get(row.owner_id) ?? "—"}</TableCell>
+                <TableCell>{clientById.get(row.client_id) ?? "—"}</TableCell>
+                <TableCell>
+                  <Link href={`/vehicles/${row.vehicle_id}`} className="text-blue-600 hover:underline">
+                    {vehicleById.get(row.vehicle_id) ?? "—"}
+                  </Link>
+                </TableCell>
                 <TableCell>
                   <Badge variant="secondary">{row.status}</Badge>
                 </TableCell>

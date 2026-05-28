@@ -23,6 +23,12 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
     .select("*", { count: "exact" })
     .order("inspection_date", { ascending: false })
     .range(from, to);
+  const vehicleIds = [...new Set((rows ?? []).map((r) => r.vehicle_id))];
+  const { data: vehicles } =
+    vehicleIds.length > 0
+      ? await supabase.from("vehicles").select("id, vehicle_no").in("id", vehicleIds)
+      : { data: [] as { id: string; vehicle_no: string | null }[] };
+  const vehicleById = new Map((vehicles ?? []).map((v) => [v.id, v.vehicle_no ?? "—"]));
 
   if (error) {
     return <p className="text-sm text-red-600">목록을 불러오지 못했습니다.</p>;
@@ -47,7 +53,7 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>차량 ID</TableHead>
+              <TableHead>차량번호</TableHead>
               <TableHead>점검일</TableHead>
               <TableHead>유형</TableHead>
               <TableHead>결과</TableHead>
@@ -57,7 +63,11 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-mono text-xs">{row.vehicle_id}</TableCell>
+                <TableCell>
+                  <Link href={`/vehicles/${row.vehicle_id}`} className="text-blue-600 hover:underline">
+                    {vehicleById.get(row.vehicle_id) ?? "—"}
+                  </Link>
+                </TableCell>
                 <TableCell>{formatDateKo(row.inspection_date)}</TableCell>
                 <TableCell>{row.inspection_type ?? "—"}</TableCell>
                 <TableCell>{row.result ?? "—"}</TableCell>

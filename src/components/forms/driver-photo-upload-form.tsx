@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
@@ -21,10 +21,12 @@ export function DriverPhotoUploadForm({
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   async function onUpload(formData: FormData) {
     const file = formData.get("file");
-    if (!(file instanceof File)) {
+    if (!(file instanceof File) || file.size === 0) {
+      fileInputRef.current?.click();
       toast.error("파일을 선택해 주세요.");
       return;
     }
@@ -73,6 +75,7 @@ export function DriverPhotoUploadForm({
           <div className="space-y-2">
             <Label htmlFor="file">파일 (jpg/png/webp, 최대 5MB)</Label>
             <input
+              ref={fileInputRef}
               id="file"
               name="file"
               type="file"

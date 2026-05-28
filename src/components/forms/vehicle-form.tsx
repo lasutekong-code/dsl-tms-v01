@@ -26,6 +26,11 @@ const formSchema = z.object({
   vin: z.string().optional(),
   vehicle_model_type: z.string().optional(),
   tonnage: z.string().optional(),
+  special_equipment: z.string().optional(),
+  height_mm: z.string().optional(),
+  length_mm: z.string().optional(),
+  width_mm: z.string().optional(),
+  max_load_kg: z.string().optional(),
   status: z.enum(STATUSES),
 });
 
@@ -52,6 +57,11 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
       vin: defaultValues?.vin ?? "",
       vehicle_model_type: defaultValues?.vehicle_model_type ?? "",
       tonnage: defaultValues?.tonnage != null ? String(defaultValues.tonnage) : "",
+      special_equipment: "",
+      height_mm: "",
+      length_mm: "",
+      width_mm: "",
+      max_load_kg: "",
       status: (defaultValues?.status as (typeof STATUSES)[number]) ?? "active",
     },
   });
@@ -67,6 +77,11 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
         vin: values.vin?.trim() ? values.vin.trim() : null,
         vehicle_model_type: values.vehicle_model_type?.trim() ? values.vehicle_model_type.trim() : null,
         tonnage: values.tonnage?.trim() ? Number.parseFloat(values.tonnage) : null,
+        special_equipment: values.special_equipment?.trim() ? values.special_equipment.trim() : null,
+        height_mm: values.height_mm?.trim() ? Number.parseInt(values.height_mm, 10) : null,
+        length_mm: values.length_mm?.trim() ? Number.parseInt(values.length_mm, 10) : null,
+        width_mm: values.width_mm?.trim() ? Number.parseInt(values.width_mm, 10) : null,
+        max_load_kg: values.max_load_kg?.trim() ? Number.parseInt(values.max_load_kg, 10) : null,
         status: values.status,
       };
 
@@ -92,6 +107,15 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
 
         toast.error(parseApiError(json));
         return;
+      }
+      const warning =
+        json && typeof json === "object" && "warning" in json && typeof (json as { warning: unknown }).warning === "string"
+          ? (json as { warning: string }).warning
+          : null;
+      if (warning) {
+        toast.message(warning, {
+          description: "중복 차량번호 상태로 저장되었습니다. 상세조회는 가능합니다.",
+        });
       }
 
       toast.success(mode === "create" ? "차량이 등록되었습니다." : "저장되었습니다.");
@@ -138,8 +162,28 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
               <Input id="vehicle_model_type" {...form.register("vehicle_model_type")} />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="special_equipment">특장(일반/냉동/냉장)</Label>
+              <Input id="special_equipment" {...form.register("special_equipment")} />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="tonnage">톤수</Label>
               <Input id="tonnage" type="number" min={0} step="0.01" {...form.register("tonnage")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="length_mm">제원 길이(mm)</Label>
+              <Input id="length_mm" type="number" min={0} {...form.register("length_mm")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="width_mm">제원 너비(mm)</Label>
+              <Input id="width_mm" type="number" min={0} {...form.register("width_mm")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="height_mm">제원 높이(mm)</Label>
+              <Input id="height_mm" type="number" min={0} {...form.register("height_mm")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="max_load_kg">최대적재량(mm 단위 화면요청)</Label>
+              <Input id="max_load_kg" type="number" min={0} {...form.register("max_load_kg")} />
             </div>
             <div className="space-y-2">
               <Label>상태</Label>

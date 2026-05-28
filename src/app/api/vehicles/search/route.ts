@@ -96,11 +96,25 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Vehicle search failed." }, { status: 500 });
   }
 
-  const results = (data ?? []).map((row) => mapSearchResult(row, role, scope));
+  const rows = data ?? [];
+  const duplicateVehicleIds = new Set<string>();
+  const seenVehicleIds = new Set<string>();
+  for (const row of rows) {
+    const vehicleId = String(row.vehicle_id);
+    if (seenVehicleIds.has(vehicleId)) {
+      duplicateVehicleIds.add(vehicleId);
+    }
+    seenVehicleIds.add(vehicleId);
+  }
+
+  const results = rows.map((row, index) => mapSearchResult(row, role, scope, index, duplicateVehicleIds));
 
   await supabase.from("search_logs").insert({ user_id: user.id, query: q });
 
-  return NextResponse.json({ results });
+  return NextResponse.json({
+    results,
+    duplicateVehicleCount: duplicateVehicleIds.size,
+  });
 }
 
 async function getAccessScope(
@@ -155,11 +169,18 @@ async function getAccessScope(
   };
 }
 
-function mapSearchResult(row: VehicleCardRow, role: UserRole, scope: AccessScope) {
+function mapSearchResult(
+  row: VehicleCardRow,
+  role: UserRole,
+  scope: AccessScope,
+  index: number,
+  duplicateVehicleIds: Set<string>,
+) {
+  const vehicleId = String(row.vehicle_id);
   const canViewSensitive =
     role === "admin" ||
     (scope.kind === "vehicles" &&
-      scope.canViewSensitiveByVehicleId.get(String(row.vehicle_id)) === true);
+      scope.canViewSensitiveByVehicleId.get(vehicleId) === true);
 
   const driverPhone =
     canViewSensitive && role !== "client_manager"
@@ -167,7 +188,9 @@ function mapSearchResult(row: VehicleCardRow, role: UserRole, scope: AccessScope
       : maskPhone(typeof row.driver_phone === "string" ? row.driver_phone : null);
 
   return {
-    id: String(row.vehicle_id),
+    id: vehicleId,
+    rowKey: `${vehicleId}-${String(row.client_id ?? "no-client")}-${index}`,
+    isDuplicatedVehicle: duplicateVehicleIds.has(vehicleId),
     plateNumber: String(row.vehicle_no ?? "-"),
     vehicleNumber: typeof row.vehicle_no === "string" ? row.vehicle_no : null,
     vehicleType: typeof row.car_name === "string" ? row.car_name : null,

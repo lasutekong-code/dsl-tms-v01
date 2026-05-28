@@ -53,6 +53,7 @@ export function ContractForm({
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [contractFile, setContractFile] = useState<File | null>(null);
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -91,6 +92,24 @@ export function ContractForm({
       if (!res.ok) {
         toast.error(parseApiError(json));
         return;
+      }
+      const savedContractId =
+        json && typeof json === "object" && "data" in json && (json as { data?: { id?: string } }).data?.id
+          ? String((json as { data: { id: string } }).data.id)
+          : String(defaultValues?.id ?? "");
+
+      if (contractFile && savedContractId) {
+        const fileForm = new FormData();
+        fileForm.set("file", contractFile);
+        const uploadRes = await fetch(`/api/admin/contracts/${savedContractId}/file`, {
+          method: "POST",
+          body: fileForm,
+        });
+        const uploadJson: unknown = await uploadRes.json().catch(() => null);
+        if (!uploadRes.ok) {
+          toast.error(parseApiError(uploadJson));
+          return;
+        }
       }
 
       toast.success(mode === "create" ? "계약이 등록되었습니다." : "저장되었습니다.");
@@ -205,6 +224,16 @@ export function ContractForm({
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="memo">메모</Label>
               <Input id="memo" {...form.register("memo")} />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="contract_file">계약서 파일 (pdf, docx, hwpx, txt)</Label>
+              <input
+                id="contract_file"
+                type="file"
+                accept=".pdf,.docx,.hwpx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                className="block w-full text-sm"
+                onChange={(e) => setContractFile(e.target.files?.[0] ?? null)}
+              />
             </div>
           </FieldGrid>
         </AdminSectionCard>

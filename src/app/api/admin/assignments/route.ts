@@ -14,6 +14,8 @@ const createSchema = z.object({
   center_id: uuidString,
   driver_id: uuidString,
   owner_id: uuidString,
+  operation_time: z.string().trim().min(1, "운행시간을 입력해 주세요."),
+  manager_name: z.string().trim().optional(),
   start_date: dateYmdSchema,
   end_date: dateYmdOptionalSchema,
   is_current: z.boolean().optional().default(true),
@@ -44,10 +46,27 @@ export async function POST(request: NextRequest) {
     center_id: parsed.data.center_id,
     driver_id: parsed.data.driver_id,
     owner_id: parsed.data.owner_id,
+    operation_time: parsed.data.operation_time,
+    manager_name: parsed.data.manager_name?.trim() ? parsed.data.manager_name.trim() : null,
     start_date: parsed.data.start_date,
     end_date: parsed.data.end_date ?? null,
     is_current: parsed.data.is_current ?? true,
   };
+
+  const { data: duplicated } = await supabase
+    .from("vehicle_assignments")
+    .select("id, vehicle_id")
+    .eq("vehicle_id", insertRow.vehicle_id)
+    .eq("client_id", insertRow.client_id)
+    .eq("operation_time", insertRow.operation_time)
+    .limit(1)
+    .maybeSingle();
+  if (duplicated) {
+    return NextResponse.json(
+      { error: "같은 차량·거래처·운행시간 조합이 이미 등록되어 있습니다. 상세조회는 기존 건에서 가능합니다." },
+      { status: 409 },
+    );
+  }
 
   const { data, error } = await supabase.from("vehicle_assignments").insert(insertRow).select("*").single();
 

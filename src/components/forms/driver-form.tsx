@@ -153,7 +153,7 @@ export function DriverForm({ mode, defaultValues }: { mode: "create" | "edit"; d
               <Input id="driver_license_no" {...form.register("driver_license_no")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cargo_license_no">화물면허 번호</Label>
+              <Label htmlFor="cargo_license_no">화물운송종사자격번호</Label>
               <Input id="cargo_license_no" {...form.register("cargo_license_no")} />
             </div>
             <div className="flex items-center gap-2 pt-6">

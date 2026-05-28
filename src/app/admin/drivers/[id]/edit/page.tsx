@@ -14,8 +14,8 @@ export default async function AdminDriversEditPage({ params }: PageProps) {
 
   const [{ data: driver }, { data: addresses }, { data: memos }] = await Promise.all([
     supabase.from("drivers").select("*").eq("id", id).maybeSingle(),
-    supabase.from("addresses").select("*").eq("target_table", "drivers").eq("target_id", id),
-    supabase.from("memos").select("*").eq("target_table", "drivers").eq("target_id", id).order("created_at", { ascending: false }),
+    supabase.from("addresses").select("*").eq("driver_id", id),
+    supabase.from("memos").select("*").eq("driver_id", id).order("created_at", { ascending: false }),
   ]);
 
   if (!driver) {

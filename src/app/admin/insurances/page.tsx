@@ -23,6 +23,24 @@ export default async function AdminInsurancesPage({ searchParams }: PageProps) {
     .select("*", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to);
+  const vehicleIds = [...new Set((rows ?? []).map((r) => r.vehicle_id))];
+  const [{ data: vehicles }, { data: assignments }, { data: drivers }] = await Promise.all([
+    vehicleIds.length > 0
+      ? supabase.from("vehicles").select("id, vehicle_no").in("id", vehicleIds)
+      : Promise.resolve({ data: [] as { id: string; vehicle_no: string | null }[] }),
+    vehicleIds.length > 0
+      ? supabase.from("vehicle_assignments").select("vehicle_id, driver_id").in("vehicle_id", vehicleIds).eq("is_current", true)
+      : Promise.resolve({ data: [] as { vehicle_id: string; driver_id: string }[] }),
+    supabase.from("drivers").select("id, driver_name"),
+  ]);
+  const vehicleById = new Map((vehicles ?? []).map((v) => [v.id, v.vehicle_no ?? "—"]));
+  const driverById = new Map((drivers ?? []).map((d) => [d.id, d.driver_name ?? "—"]));
+  const driverNamesByVehicle = new Map<string, string>();
+  for (const row of assignments ?? []) {
+    const prev = driverNamesByVehicle.get(row.vehicle_id);
+    const name = driverById.get(row.driver_id) ?? "—";
+    driverNamesByVehicle.set(row.vehicle_id, prev ? `${prev}, ${name}` : name);
+  }
 
   if (error) {
     return <p className="text-sm text-red-600">목록을 불러오지 못했습니다.</p>;
@@ -47,7 +65,8 @@ export default async function AdminInsurancesPage({ searchParams }: PageProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>차량 ID</TableHead>
+              <TableHead>차량번호</TableHead>
+              <TableHead>운전자명</TableHead>
               <TableHead>보험사</TableHead>
               <TableHead>갱신일</TableHead>
               <TableHead>등록일</TableHead>
@@ -57,7 +76,12 @@ export default async function AdminInsurancesPage({ searchParams }: PageProps) {
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-mono text-xs">{row.vehicle_id}</TableCell>
+                <TableCell>
+                  <Link href={`/vehicles/${row.vehicle_id}`} className="text-blue-600 hover:underline">
+                    {vehicleById.get(row.vehicle_id) ?? "—"}
+                  </Link>
+                </TableCell>
+                <TableCell>{driverNamesByVehicle.get(row.vehicle_id) ?? "—"}</TableCell>
                 <TableCell>{row.insurance_company ?? "—"}</TableCell>
                 <TableCell>{row.renewal_date ? formatDateKo(row.renewal_date) : "—"}</TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>

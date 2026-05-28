@@ -46,14 +46,13 @@ export async function POST(request: NextRequest) {
   const { data: existing } = await supabase
     .from("addresses")
     .select("id")
-    .eq("target_table", parsed.data.target_table)
-    .eq("target_id", parsed.data.target_id)
+    .eq(parsed.data.target_table === "owners" ? "owner_id" : "driver_id", parsed.data.target_id)
     .eq("address_type", parsed.data.address_type)
     .maybeSingle();
 
   const row = {
-    target_table: parsed.data.target_table,
-    target_id: parsed.data.target_id,
+    owner_id: parsed.data.target_table === "owners" ? parsed.data.target_id : null,
+    driver_id: parsed.data.target_table === "drivers" ? parsed.data.target_id : null,
     address_type: parsed.data.address_type,
     zip_code: parsed.data.zip_code ?? null,
     address1: parsed.data.address1 ?? null,
@@ -76,7 +75,10 @@ export async function POST(request: NextRequest) {
     action: existing?.id ? "address.update" : "address.create",
     targetTable: "addresses",
     targetId: data.id,
-    metadata: { target_table: row.target_table, target_id: row.target_id },
+    metadata: {
+      target_table: parsed.data.target_table,
+      target_id: parsed.data.target_id,
+    },
   });
 
   return NextResponse.json({ data });

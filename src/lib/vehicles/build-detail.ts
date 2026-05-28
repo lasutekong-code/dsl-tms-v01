@@ -79,13 +79,12 @@ export async function buildVehicleDetailFromView(
     supabase
       .from("addresses")
       .select("address_type, zip_code, address1, address2")
-      .eq("target_table", "vehicles")
-      .eq("target_id", vehicleId),
+      .is("owner_id", null)
+      .is("driver_id", null),
     supabase
       .from("memos")
       .select("id, memo_type, content, visibility, created_at")
-      .eq("target_table", "vehicles")
-      .eq("target_id", vehicleId),
+      .eq("vehicle_id", vehicleId),
   ]);
 
   const photoMap = new Map<string, VehiclePhoto>();

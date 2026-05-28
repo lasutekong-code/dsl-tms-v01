@@ -16,6 +16,8 @@ const updateSchema = z.object({
   center_id: uuidString.optional(),
   driver_id: uuidString.optional(),
   owner_id: uuidString.optional(),
+  operation_time: z.string().trim().min(1).optional(),
+  manager_name: z.string().trim().optional().nullable(),
   start_date: dateYmdSchema.optional(),
   end_date: dateYmdOptionalSchema.optional(),
   is_current: z.boolean().optional(),

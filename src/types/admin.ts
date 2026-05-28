@@ -2,7 +2,6 @@
 
 export const CONTRACT_TYPES = [
   { value: "consignment", label: "위수탁계약" },
-  { value: "service", label: "차량용역계약" },
 ] as const;
 
 export const CONTRACT_STATUSES = [

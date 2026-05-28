@@ -102,6 +102,8 @@ export type VehicleAssignmentRow = {
   center_id: string;
   driver_id: string;
   owner_id: string;
+  operation_time: string;
+  manager_name: string | null;
   start_date: string;
   end_date: string | null;
   is_current: boolean | null;
@@ -114,6 +116,7 @@ export type InsuranceRow = {
   vehicle_id: string;
   insurance_company: string | null;
   insurance_rate: number | null;
+  insurance_rate_text: string | null;
   renewal_date: string | null;
   memo: string | null;
   created_at?: string | null;
@@ -141,14 +144,20 @@ export type ContractRow = {
   contract_end_date: string | null;
   status: string;
   memo: string | null;
+  contract_file_bucket?: string | null;
+  contract_file_path?: string | null;
+  contract_file_name?: string | null;
+  contract_file_mime?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
 
 export type AddressRow = {
   id: string;
-  target_table: string;
-  target_id: string;
+  target_table?: string | null;
+  target_id?: string | null;
+  owner_id?: string | null;
+  driver_id?: string | null;
   address_type: string | null;
   zip_code: string | null;
   address1: string | null;
@@ -159,8 +168,11 @@ export type AddressRow = {
 
 export type MemoRow = {
   id: string;
-  target_table: string;
-  target_id: string;
+  target_table?: string | null;
+  target_id?: string | null;
+  vehicle_id?: string | null;
+  driver_id?: string | null;
+  created_by?: string | null;
   memo_type: string | null;
   content: string;
   visibility: string | null;

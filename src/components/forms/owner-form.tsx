@@ -183,7 +183,7 @@ export function OwnerForm({ mode, defaultValues }: { mode: "create" | "edit"; de
               <Input id="business_closed_date" type="date" {...form.register("business_closed_date")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="service_fee_send_method">수수료 전달 방식</Label>
+              <Label htmlFor="service_fee_send_method">안내문 발송 방식(문자/카톡/우편)</Label>
               <Input id="service_fee_send_method" {...form.register("service_fee_send_method")} />
             </div>
             <div className="space-y-2">
