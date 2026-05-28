@@ -18,6 +18,18 @@ This repo includes:
 3. `CREATE POLICY ...` (row access rules)
 4. `SELECT public.grant_data_api_access('public.your_table'::regclass);`
 
+### Views
+
+App-facing views should use **security invoker** so RLS applies as the caller (not the view owner):
+
+```sql
+CREATE VIEW public.my_view
+WITH (security_invoker = true)
+AS SELECT ...;
+```
+
+Or for an existing view: `ALTER VIEW public.my_view SET (security_invoker = true);`
+
 Official pattern (equivalent to the helper):
 
 ```sql
