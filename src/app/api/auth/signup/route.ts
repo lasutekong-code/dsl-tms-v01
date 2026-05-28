@@ -77,9 +77,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "프로필 저장에 실패했습니다. 관리자에게 문의해 주세요." }, { status: 500 });
   }
 
-  await supabase.auth.signOut();
-
-  await supabase.from("account_requests").insert({
+  const { error: requestError } = await supabase.from("account_requests").insert({
     request_type: "signup",
     email,
     login_id: email,
@@ -90,6 +88,12 @@ export async function POST(request: NextRequest) {
     profile_id: userId,
     message: "신규 가입 승인 대기",
   });
+
+  await supabase.auth.signOut();
+
+  if (requestError) {
+    return NextResponse.json({ error: "가입 신청 기록 저장에 실패했습니다. 관리자에게 문의해 주세요." }, { status: 500 });
+  }
 
   return NextResponse.json({
     data: {

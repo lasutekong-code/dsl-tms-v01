@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
         ? `${requestMessage} (등록된 계정 있음, is_active=${profile.is_active})`
         : `${requestMessage} (등록된 계정 없음 → 신규가입 검토)`,
       status: "pending",
-      profile_id: profile?.id ?? null,
+      profile_id: null,
     })
     .select("*")
     .single();

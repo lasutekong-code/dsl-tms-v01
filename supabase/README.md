@@ -43,3 +43,16 @@ RLS still controls which rows each role can see; grants only allow the role to a
 
 - [Changelog: Tables not exposed to Data API automatically](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically)
 - [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
+
+## Security Advisor
+
+Migrations under `supabase/migrations/` address common lints:
+
+| Lint | Fix |
+|------|-----|
+| `function_search_path_mutable` | `SET search_path = public` on functions |
+| `*_security_definer_function_executable` | `REVOKE EXECUTE` from `anon` / `authenticated` on internal RPCs (`is_active_admin`, `handle_new_user`, `grant_data_api_access`) |
+| `rls_policy_always_true` | Replace `WITH CHECK (true)` with field constraints (see `account_requests`) |
+| `extension_in_public` | `pg_trgm` lives in `extensions` schema; GIN indexes use `extensions.gin_trgm_ops` |
+
+**Leaked password protection** (Auth dashboard only): Authentication → Providers → Email → enable [Leaked password protection](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection).
