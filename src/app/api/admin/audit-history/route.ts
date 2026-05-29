@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
@@ -21,10 +22,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "target_table과 target_id가 필요합니다." }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const supabase = createServiceRoleClient() ?? (await createClient());
   const { data, error } = await supabase
     .from("audit_logs")
-    .select("id, action, profile_id, created_at")
+    .select("id, action, profile_id, created_at, metadata")
     .eq("target_table", targetTable)
     .eq("target_id", targetId)
     .order("created_at", { ascending: false })

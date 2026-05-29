@@ -13,10 +13,11 @@ export default async function AdminDriversEditPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: driver }, { data: addresses }, { data: memos }] = await Promise.all([
+  const [{ data: driver }, { data: addresses }, { data: memos }, { data: photo }] = await Promise.all([
     supabase.from("drivers").select("*").eq("id", id).maybeSingle(),
     supabase.from("addresses").select("*").eq("driver_id", id),
     supabase.from("memos").select("*").eq("driver_id", id).order("created_at", { ascending: false }),
+    supabase.from("driver_photos").select("storage_path").eq("driver_id", id).maybeSingle(),
   ]);
 
   if (!driver) {
@@ -28,7 +29,7 @@ export default async function AdminDriversEditPage({ params }: PageProps) {
 
   return (
     <div className="space-y-12">
-      <DriverForm mode="edit" defaultValues={decryptedDriver} />
+      <DriverForm mode="edit" defaultValues={decryptedDriver} photoStoragePath={photo?.storage_path ?? null} />
       <div className="border-t border-slate-200 pt-10" id="driver-addresses">
         <AdminPageHeader title="운전자 주소" description="자택·우편 주소를 이 운전자에 연결해 저장합니다." />
         <DriverAddressesPanel driverId={id} addresses={decryptedAddresses} />

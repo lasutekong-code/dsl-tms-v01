@@ -198,9 +198,26 @@ export type DriverPhotoRow = {
   created_at?: string | null;
 };
 
+export type AdminDashboardSettingsRow = {
+  id: string;
+  quick_guide: string;
+  photo_guide: string;
+  updated_at?: string | null;
+  updated_by?: string | null;
+};
+
 export type Database = {
   public: {
     Tables: {
+      admin_dashboard_settings: {
+        Row: AdminDashboardSettingsRow;
+        Insert: Omit<AdminDashboardSettingsRow, "updated_at" | "updated_by"> & {
+          updated_at?: string | null;
+          updated_by?: string | null;
+        };
+        Update: Partial<AdminDashboardSettingsRow>;
+        Relationships: [];
+      };
       profiles: {
         Row: ProfileRow;
         Insert: Partial<ProfileRow> & { id: string };

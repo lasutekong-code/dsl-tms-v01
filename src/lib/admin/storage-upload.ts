@@ -9,12 +9,23 @@ export async function uploadAdminStorageObject(
   upsert = true,
 ) {
   const service = createServiceRoleClient();
-  const client = service ?? (await createClient());
+  if (service) {
+    const result = await service.storage.from(bucket).upload(path, body, { upsert, contentType });
+    if (!result.error) {
+      return result;
+    }
+  }
+
+  const client = await createClient();
   return client.storage.from(bucket).upload(path, body, { upsert, contentType });
 }
 
 export async function removeAdminStorageObject(bucket: string, path: string) {
   const service = createServiceRoleClient();
-  const client = service ?? (await createClient());
-  return client.storage.from(bucket).remove([path]);
+  if (!service) {
+    const client = await createClient();
+    return client.storage.from(bucket).remove([path]);
+  }
+
+  return service.storage.from(bucket).remove([path]);
 }

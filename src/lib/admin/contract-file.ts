@@ -43,7 +43,8 @@ export async function uploadContractFile(
     return { error: "pdf, docx, hwpx, txt 파일만 업로드할 수 있습니다." as const };
   }
 
-  const path = `${contractId}/${Date.now()}-${file.name}`;
+  const safeName = file.name.replace(/[^\w.\-가-힣]/g, "_");
+  const path = `${contractId}/${Date.now()}-${safeName}`;
   const { error: uploadError } = await uploadAdminStorageObject(
     CONTRACT_FILE_BUCKET,
     path,
@@ -51,7 +52,13 @@ export async function uploadContractFile(
     file.type || "application/octet-stream",
   );
   if (uploadError) {
-    return { error: "파일 업로드에 실패했습니다." as const };
+    console.error("contract file storage upload failed", uploadError.message);
+    const detail = uploadError.message?.trim();
+    return {
+      error: detail
+        ? `파일 업로드에 실패했습니다. (${detail})`
+        : ("파일 업로드에 실패했습니다. SUPABASE_SERVICE_ROLE_KEY 설정을 확인해 주세요." as const),
+    };
   }
 
   const { data, error } = await supabase

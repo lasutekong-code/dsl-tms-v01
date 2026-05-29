@@ -13,11 +13,12 @@ import { DateYmdInput } from "@/components/admin/date-ymd-input";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { VEHICLE_STATUS_LABELS } from "@/types/admin";
+import { AdminVehiclePhotosPanel } from "@/components/admin/admin-vehicle-photos-panel";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import type { VehicleRow } from "@/types/database";
+import type { VehicleRow, VehicleSpecRow } from "@/types/database";
 
 const STATUSES = ["active", "inactive", "suspended", "terminated"] as const;
 
@@ -47,7 +48,17 @@ function parseApiError(payload: unknown): string {
   return "요청 처리 중 오류가 발생했습니다.";
 }
 
-export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; defaultValues?: Partial<VehicleRow> | null }) {
+export function VehicleForm({
+  mode,
+  defaultValues,
+  spec,
+  photos = [],
+}: {
+  mode: "create" | "edit";
+  defaultValues?: Partial<VehicleRow> | null;
+  spec?: Partial<VehicleSpecRow> | null;
+  photos?: { photo_type: string; storage_path: string }[];
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const form = useForm<VehicleFormValues>({
@@ -60,11 +71,11 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
       vin: defaultValues?.vin ?? "",
       vehicle_model_type: defaultValues?.vehicle_model_type ?? "",
       tonnage: defaultValues?.tonnage != null ? String(defaultValues.tonnage) : "",
-      special_equipment: "",
-      height_mm: "",
-      length_mm: "",
-      width_mm: "",
-      max_load_kg: "",
+      special_equipment: spec?.special_equipment ?? "",
+      height_mm: spec?.height_mm != null ? String(spec.height_mm) : "",
+      length_mm: spec?.length_mm != null ? String(spec.length_mm) : "",
+      width_mm: spec?.width_mm != null ? String(spec.width_mm) : "",
+      max_load_kg: spec?.max_load_kg != null ? String(spec.max_load_kg) : "",
       status: (defaultValues?.status as (typeof STATUSES)[number]) ?? "active",
     },
   });
@@ -122,8 +133,11 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
       }
 
       toast.success(mode === "create" ? "차량이 등록되었습니다." : "저장되었습니다.");
-      router.push("/admin/vehicles");
-      router.refresh();
+      if (mode === "create") {
+        router.push("/admin/vehicles");
+      } else {
+        router.refresh();
+      }
     } finally {
       setPending(false);
     }
@@ -219,6 +233,7 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
         </AdminSectionCard>
         <AdminFormActions isPending={pending} cancelHref="/admin/vehicles" listHref="/admin/vehicles" />
       </form>
+      {mode === "edit" ? <AdminVehiclePhotosPanel photos={photos} /> : null}
     </div>
   );
 }

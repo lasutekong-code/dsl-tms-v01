@@ -13,6 +13,7 @@ import { DateYmdInput } from "@/components/admin/date-ymd-input";
 import { ResidentIdInput } from "@/components/admin/resident-id-input";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { DriverPhotoThumb } from "@/components/admin/driver-photo-thumb";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -46,7 +47,15 @@ function parseApiError(payload: unknown): string {
   return "요청 처리 중 오류가 발생했습니다.";
 }
 
-export function DriverForm({ mode, defaultValues }: { mode: "create" | "edit"; defaultValues?: Partial<DriverRow> | null }) {
+export function DriverForm({
+  mode,
+  defaultValues,
+  photoStoragePath,
+}: {
+  mode: "create" | "edit";
+  defaultValues?: Partial<DriverRow> | null;
+  photoStoragePath?: string | null;
+}) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const form = useForm<DriverFormValues>({
@@ -137,14 +146,22 @@ export function DriverForm({ mode, defaultValues }: { mode: "create" | "edit"; d
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AdminSectionCard title="기본 정보" sectionId="sec-driver-basic">
           <FieldGrid>
-            <div className="space-y-2">
-              <Label htmlFor="driver_name">
-                운전자명 <span className="text-red-600">*</span>
-              </Label>
-              <Input id="driver_name" {...form.register("driver_name")} />
-              {form.formState.errors.driver_name ? (
-                <p className="text-sm text-red-600">{form.formState.errors.driver_name.message}</p>
+            <div className="flex flex-wrap items-start gap-4 md:col-span-2">
+              {mode === "edit" ? (
+                <DriverPhotoThumb
+                  driverName={defaultValues?.driver_name?.trim() || "운전자"}
+                  storagePath={photoStoragePath ?? null}
+                />
               ) : null}
+              <div className="min-w-[200px] flex-1 space-y-2">
+                <Label htmlFor="driver_name">
+                  운전자명 <span className="text-red-600">*</span>
+                </Label>
+                <Input id="driver_name" {...form.register("driver_name")} />
+                {form.formState.errors.driver_name ? (
+                  <p className="text-sm text-red-600">{form.formState.errors.driver_name.message}</p>
+                ) : null}
+              </div>
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">
@@ -157,7 +174,13 @@ export function DriverForm({ mode, defaultValues }: { mode: "create" | "edit"; d
               control={form.control}
               name="birth_date"
               render={({ field }) => (
-                <DateYmdInput id="birth_date" label="생년월일" value={field.value ?? ""} onChange={field.onChange} />
+                <DateYmdInput
+                  key={field.value ?? "birth-empty"}
+                  id="birth_date"
+                  label="생년월일"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                />
               )}
             />
             <Controller

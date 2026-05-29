@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-function parseValue(value: string) {
+type DateParts = { year: string; month: string; day: string };
+
+function parseValue(value: string): DateParts {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
   if (!m) {
     return { year: "", month: "", day: "" };
@@ -12,19 +16,20 @@ function parseValue(value: string) {
   return { year: m[1], month: m[2], day: m[3] };
 }
 
-function compose(year: string, month: string, day: string) {
+function compose(parts: DateParts) {
+  const { year, month, day } = parts;
   if (!year && !month && !day) {
     return "";
   }
 
-  if (year.length !== 4 || month.length !== 2 || day.length !== 2) {
-    return "";
+  if (year.length === 4 && month.length === 2 && day.length === 2) {
+    return `${year}-${month}-${day}`;
   }
 
-  return `${year}-${month}-${day}`;
+  return null;
 }
 
-export function DateYmdInput({
+function DateYmdInputFields({
   id,
   label,
   value,
@@ -35,12 +40,20 @@ export function DateYmdInput({
   value: string;
   onChange: (next: string) => void;
 }) {
-  const parts = parseValue(value);
+  const [parts, setParts] = useState<DateParts>(() => parseValue(value));
 
-  function update(part: "year" | "month" | "day", raw: string) {
+  function update(part: keyof DateParts, raw: string) {
     const digits = raw.replace(/\D/g, "");
-    const next = { ...parts, [part]: part === "year" ? digits.slice(0, 4) : digits.slice(0, 2) };
-    onChange(compose(next.year, next.month, next.day));
+    const next: DateParts = {
+      ...parts,
+      [part]: part === "year" ? digits.slice(0, 4) : digits.slice(0, 2),
+    };
+    setParts(next);
+
+    const composed = compose(next);
+    if (composed !== null) {
+      onChange(composed);
+    }
   }
 
   return (
@@ -77,4 +90,13 @@ export function DateYmdInput({
       </div>
     </div>
   );
+}
+
+export function DateYmdInput(props: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (next: string) => void;
+}) {
+  return <DateYmdInputFields key={`${props.id}-${props.value}`} {...props} />;
 }
