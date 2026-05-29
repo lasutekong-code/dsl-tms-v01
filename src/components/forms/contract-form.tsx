@@ -9,6 +9,7 @@ import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
 import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
+import { DateYmdInput } from "@/components/admin/date-ymd-input";
 import { FilePickerButton } from "@/components/admin/file-picker-button";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
@@ -201,14 +202,20 @@ export function ContractForm({
                 )}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="contract_start_date">시작일 *</Label>
-              <Input id="contract_start_date" type="date" {...form.register("contract_start_date")} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contract_end_date">종료일</Label>
-              <Input id="contract_end_date" type="date" {...form.register("contract_end_date")} />
-            </div>
+            <Controller
+              control={form.control}
+              name="contract_start_date"
+              render={({ field }) => (
+                <DateYmdInput id="contract_start_date" label="시작일 *" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="contract_end_date"
+              render={({ field }) => (
+                <DateYmdInput id="contract_end_date" label="종료일" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
             <div className="space-y-2">
               <Label>상태</Label>
               <Controller

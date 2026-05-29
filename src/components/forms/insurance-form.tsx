@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
+import { DateYmdInput } from "@/components/admin/date-ymd-input";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
@@ -85,6 +87,9 @@ export function InsuranceForm({
   return (
     <div className="space-y-6">
       <AdminPageHeader title={mode === "create" ? "보험 등록" : "보험 수정"} description="차량 보험 정보를 입력합니다." />
+      {mode === "edit" && defaultValues?.id ? (
+        <AdminRecordMeta updatedAt={defaultValues.updated_at} targetTable="insurances" targetId={defaultValues.id} />
+      ) : null}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AdminSectionCard title="보험" sectionId="sec-insurance">
           <FieldGrid>
@@ -119,10 +124,13 @@ export function InsuranceForm({
               <Label htmlFor="insurance_rate">보험요율(대인/일반/특할/적재물)</Label>
               <Input id="insurance_rate" {...form.register("insurance_rate")} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="renewal_date">갱신일</Label>
-              <Input id="renewal_date" type="date" {...form.register("renewal_date")} />
-            </div>
+            <Controller
+              control={form.control}
+              name="renewal_date"
+              render={({ field }) => (
+                <DateYmdInput id="renewal_date" label="갱신일" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="memo">메모</Label>
               <Input id="memo" {...form.register("memo")} />

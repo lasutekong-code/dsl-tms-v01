@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
+import { DateYmdInput } from "@/components/admin/date-ymd-input";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
@@ -147,6 +149,13 @@ export function AssignmentForm({
   return (
     <div className="space-y-6">
       <AdminPageHeader title={mode === "create" ? "차량 배정 등록" : "차량 배정 수정"} description="차량·거래처·센터·운전자·사업주를 연결합니다." />
+      {mode === "edit" && defaultValues?.id ? (
+        <AdminRecordMeta
+          updatedAt={defaultValues.updated_at}
+          targetTable="vehicle_assignments"
+          targetId={defaultValues.id}
+        />
+      ) : null}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AdminSectionCard title="배정" sectionId="sec-assignment">
           <FieldGrid>
@@ -206,14 +215,20 @@ export function AssignmentForm({
               <Label htmlFor="manager_name">담당자명</Label>
               <Input id="manager_name" {...form.register("manager_name")} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="start_date">시작일 *</Label>
-              <Input id="start_date" type="date" {...form.register("start_date")} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end_date">종료일</Label>
-              <Input id="end_date" type="date" {...form.register("end_date")} />
-            </div>
+            <Controller
+              control={form.control}
+              name="start_date"
+              render={({ field }) => (
+                <DateYmdInput id="start_date" label="시작일 *" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="end_date"
+              render={({ field }) => (
+                <DateYmdInput id="end_date" label="종료일" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
             <div className="flex items-center gap-2 pt-2 md:col-span-2">
               <Controller
                 control={form.control}

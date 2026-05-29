@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { AssignmentForm } from "@/components/forms/assignment-form";
+import { decryptDriverSelectOptions, decryptOwnerSelectOptions } from "@/lib/admin/decrypt-select-options";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -36,8 +37,8 @@ export default async function AdminAssignmentsEditPage({ params }: PageProps) {
       }))}
       clients={clients ?? []}
       centers={centers ?? []}
-      drivers={drivers ?? []}
-      owners={owners ?? []}
+      drivers={decryptDriverSelectOptions(drivers ?? [])}
+      owners={decryptOwnerSelectOptions(owners ?? [])}
     />
   );
 }

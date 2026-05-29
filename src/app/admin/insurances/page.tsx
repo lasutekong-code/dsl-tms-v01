@@ -5,6 +5,7 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
+import { decryptPii } from "@/lib/crypto/pii";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 20;
@@ -34,7 +35,9 @@ export default async function AdminInsurancesPage({ searchParams }: PageProps) {
     supabase.from("drivers").select("id, driver_name"),
   ]);
   const vehicleById = new Map((vehicles ?? []).map((v) => [v.id, v.vehicle_no ?? "—"]));
-  const driverById = new Map((drivers ?? []).map((d) => [d.id, d.driver_name ?? "—"]));
+  const driverById = new Map(
+    (drivers ?? []).map((d) => [d.id, decryptPii(d.driver_name) ?? d.driver_name ?? "—"]),
+  );
   const driverNamesByVehicle = new Map<string, string>();
   for (const row of assignments ?? []) {
     const prev = driverNamesByVehicle.get(row.vehicle_id);

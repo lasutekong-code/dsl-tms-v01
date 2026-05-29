@@ -1,4 +1,5 @@
 import { AssignmentForm } from "@/components/forms/assignment-form";
+import { decryptDriverSelectOptions, decryptOwnerSelectOptions } from "@/lib/admin/decrypt-select-options";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminAssignmentsNewPage() {
@@ -25,8 +26,8 @@ export default async function AdminAssignmentsNewPage() {
       }))}
       clients={clients ?? []}
       centers={centers ?? []}
-      drivers={drivers ?? []}
-      owners={owners ?? []}
+      drivers={decryptDriverSelectOptions(drivers ?? [])}
+      owners={decryptOwnerSelectOptions(owners ?? [])}
     />
   );
 }

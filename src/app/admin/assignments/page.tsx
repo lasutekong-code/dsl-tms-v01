@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
+import { decryptPii } from "@/lib/crypto/pii";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 20;
@@ -39,7 +40,9 @@ export default async function AdminAssignmentsPage({ searchParams }: PageProps) 
       : Promise.resolve({ data: [] as { id: string; client_name: string | null }[] }),
   ]);
   const vehicleById = new Map((vehicles ?? []).map((v) => [v.id, v.vehicle_no ?? "—"]));
-  const driverById = new Map((drivers ?? []).map((d) => [d.id, d.driver_name ?? "—"]));
+  const driverById = new Map(
+    (drivers ?? []).map((d) => [d.id, decryptPii(d.driver_name) ?? d.driver_name ?? "—"]),
+  );
   const clientById = new Map((clients ?? []).map((c) => [c.id, c.client_name ?? "—"]));
 
   if (error) {
