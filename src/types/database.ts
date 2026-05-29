@@ -129,6 +129,7 @@ export type VehicleInspectionRow = {
   vehicle_id: string;
   inspection_date: string;
   inspection_type: string | null;
+  inspection_station_name: string | null;
   result: string | null;
   memo: string | null;
   created_at?: string | null;

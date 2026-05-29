@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import { AdminEntityLink } from "@/components/admin/admin-entity-link";
 import { AdminListActions } from "@/components/admin/admin-list-actions";
+import { AdminRegisterButton } from "@/components/admin/admin-register-button";
+import { AdminVehicleDetailLink } from "@/components/admin/admin-vehicle-detail-link";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -61,9 +62,7 @@ export default async function AdminAssignmentsPage({ searchParams }: PageProps) 
         toolbar={
           <>
             <AdminSearchBar placeholder="검색(차량번호 등)…" name="q" defaultValue="" />
-            <Button asChild>
-              <Link href="/admin/assignments/new">등록</Link>
-            </Button>
+            <AdminRegisterButton href="/admin/assignments/new" />
           </>
         }
       >
@@ -86,9 +85,9 @@ export default async function AdminAssignmentsPage({ searchParams }: PageProps) 
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <AdminEntityLink href={`/admin/assignments/${row.id}`}>
+                  <AdminVehicleDetailLink vehicleId={row.vehicle_id}>
                     {vehicleById.get(row.vehicle_id) ?? "—"}
-                  </AdminEntityLink>
+                  </AdminVehicleDetailLink>
                 </TableCell>
                 <TableCell>{driverById.get(row.driver_id) ?? "—"}</TableCell>
                 <TableCell>{clientById.get(row.client_id) ?? "—"}</TableCell>

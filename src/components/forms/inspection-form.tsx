@@ -22,6 +22,7 @@ const formSchema = z.object({
   vehicle_id: z.string().uuid(),
   inspection_date: z.string().min(1),
   inspection_type: z.string().optional(),
+  inspection_station_name: z.string().optional(),
   result: z.string().optional(),
   memo: z.string().optional(),
 });
@@ -53,6 +54,7 @@ export function InspectionForm({
       vehicle_id: defaultValues?.vehicle_id ?? "",
       inspection_date: defaultValues?.inspection_date?.slice(0, 10) ?? "",
       inspection_type: defaultValues?.inspection_type ?? "",
+      inspection_station_name: defaultValues?.inspection_station_name ?? "",
       result: defaultValues?.result ?? "",
       memo: defaultValues?.memo ?? "",
     },
@@ -65,6 +67,7 @@ export function InspectionForm({
         vehicle_id: values.vehicle_id,
         inspection_date: values.inspection_date,
         inspection_type: values.inspection_type?.trim() ? values.inspection_type.trim() : null,
+        inspection_station_name: values.inspection_station_name?.trim() ? values.inspection_station_name.trim() : null,
         result: values.result?.trim() ? values.result.trim() : null,
         memo: values.memo?.trim() ? values.memo.trim() : null,
       };
@@ -135,6 +138,10 @@ export function InspectionForm({
             <div className="space-y-2">
               <Label htmlFor="inspection_type">점검 유형</Label>
               <Input id="inspection_type" {...form.register("inspection_type")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="inspection_station_name">검사소명</Label>
+              <Input id="inspection_station_name" {...form.register("inspection_station_name")} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="result">결과</Label>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminRegisterButton } from "@/components/admin/admin-register-button";
 import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
@@ -60,9 +61,7 @@ export default async function AdminInsurancesPage({ searchParams }: PageProps) {
         toolbar={
           <>
             <AdminSearchBar placeholder="검색…" />
-            <Button asChild>
-              <Link href="/admin/insurances/new">등록</Link>
-            </Button>
+            <AdminRegisterButton href="/admin/insurances/new" />
           </>
         }
       >

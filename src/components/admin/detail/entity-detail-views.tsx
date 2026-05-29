@@ -8,6 +8,7 @@ import { DetailField, DetailFieldGrid } from "@/components/admin/detail/detail-f
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
 import { CONTRACT_STATUSES, CONTRACT_TYPES, VEHICLE_STATUS_LABELS } from "@/types/admin";
 import type {
@@ -262,7 +263,15 @@ export function InsuranceDetailView({ data, vehicleNo }: { data: InsuranceRow; v
   );
 }
 
-export function InspectionDetailView({ data, vehicleNo }: { data: VehicleInspectionRow; vehicleNo: string }) {
+export function InspectionDetailView({
+  data,
+  vehicleNo,
+  history,
+}: {
+  data: VehicleInspectionRow;
+  vehicleNo: string;
+  history: VehicleInspectionRow[];
+}) {
   return (
     <div className="space-y-6">
       <AdminPageHeader title="점검 조회" description={vehicleNo} />
@@ -276,9 +285,42 @@ export function InspectionDetailView({ data, vehicleNo }: { data: VehicleInspect
           <DetailField label="차량번호" value={vehicleNo} />
           <DetailField label="점검일" value={formatDateKo(data.inspection_date)} />
           <DetailField label="점검 유형" value={data.inspection_type} />
+          <DetailField label="검사소명" value={data.inspection_station_name} />
           <DetailField label="결과" value={data.result} />
           <DetailField label="메모" value={data.memo} fullWidth />
         </DetailFieldGrid>
+      </AdminSectionCard>
+      <AdminSectionCard title="차량점검 이력" sectionId="sec-inspection-history">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>점검일</TableHead>
+              <TableHead>점검유형</TableHead>
+              <TableHead>검사소</TableHead>
+              <TableHead>결과</TableHead>
+              <TableHead>메모</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {history.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-slate-500">
+                  이력이 없습니다.
+                </TableCell>
+              </TableRow>
+            ) : (
+              history.map((row) => (
+                <TableRow key={row.id} className={row.id === data.id ? "bg-sky-50/60" : undefined}>
+                  <TableCell>{formatDateKo(row.inspection_date)}</TableCell>
+                  <TableCell>{row.inspection_type ?? "—"}</TableCell>
+                  <TableCell>{row.inspection_station_name ?? "—"}</TableCell>
+                  <TableCell>{row.result ?? "—"}</TableCell>
+                  <TableCell>{row.memo ?? "—"}</TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </AdminSectionCard>
       <AdminDetailFooter listHref="/admin/inspections" editHref={`/admin/inspections/${data.id}/edit`} />
     </div>

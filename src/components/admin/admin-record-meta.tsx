@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
 
@@ -11,6 +11,7 @@ type HistoryRow = {
   id: string;
   action: string;
   profile_id: string | null;
+  login_id: string | null;
   created_at: string | null;
   metadata?: { detail_action?: string } | null;
 };
@@ -87,7 +88,7 @@ export function AdminRecordMeta({
           </Button>
         </DialogTrigger>
         <DialogContent className="max-h-[80vh] max-w-2xl overflow-y-auto">
-          <h2 className="text-lg font-semibold text-slate-900">수정 이력</h2>
+          <DialogTitle className="text-lg font-semibold text-slate-900">수정 이력</DialogTitle>
           {historyError ? <p className="text-sm text-red-600">{historyError}</p> : null}
           <Table>
             <TableHeader>
@@ -109,7 +110,7 @@ export function AdminRecordMeta({
                   <TableRow key={row.id}>
                     <TableCell>{row.created_at ? formatDateKo(row.created_at) : "-"}</TableCell>
                     <TableCell>{formatHistoryAction(row)}</TableCell>
-                    <TableCell className="font-mono text-xs">{row.profile_id ?? "-"}</TableCell>
+                    <TableCell className="text-xs">{row.login_id ?? row.profile_id ?? "-"}</TableCell>
                   </TableRow>
                 ))
               )}

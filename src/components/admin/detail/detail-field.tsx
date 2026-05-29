@@ -2,9 +2,11 @@ import { FieldGrid, FieldFull } from "@/components/admin/field-grid";
 
 export function DetailField({ label, value, fullWidth }: { label: string; value: React.ReactNode; fullWidth?: boolean }) {
   const content = (
-    <div className="space-y-1">
-      <dt className="text-sm font-medium text-slate-600">{label}</dt>
-      <dd className="text-sm text-slate-900">{value ?? "—"}</dd>
+    <div className="space-y-2">
+      <dt className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-semibold text-slate-700">
+        {label}
+      </dt>
+      <dd className="px-1 text-sm text-slate-900">{value ?? "—"}</dd>
     </div>
   );
 

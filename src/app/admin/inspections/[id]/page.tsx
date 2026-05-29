@@ -14,7 +14,20 @@ export default async function AdminInspectionViewPage({ params }: PageProps) {
     notFound();
   }
 
-  const { data: vehicle } = await supabase.from("vehicles").select("vehicle_no").eq("id", inspection.vehicle_id).maybeSingle();
+  const [{ data: vehicle }, { data: history }] = await Promise.all([
+    supabase.from("vehicles").select("vehicle_no").eq("id", inspection.vehicle_id).maybeSingle(),
+    supabase
+      .from("vehicle_inspections")
+      .select("*")
+      .eq("vehicle_id", inspection.vehicle_id)
+      .order("inspection_date", { ascending: false }),
+  ]);
 
-  return <InspectionDetailView data={inspection} vehicleNo={vehicle?.vehicle_no ?? "—"} />;
+  return (
+    <InspectionDetailView
+      data={inspection}
+      vehicleNo={vehicle?.vehicle_no ?? "—"}
+      history={history ?? []}
+    />
+  );
 }

@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import { AdminEntityLink } from "@/components/admin/admin-entity-link";
 import { AdminListActions } from "@/components/admin/admin-list-actions";
+import { AdminRegisterButton } from "@/components/admin/admin-register-button";
+import { AdminVehicleDetailLink } from "@/components/admin/admin-vehicle-detail-link";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -43,9 +44,7 @@ export default async function AdminVehiclesListPage({ searchParams }: PageProps)
         toolbar={
           <>
             <AdminSearchBar defaultValue={q} />
-            <Button asChild>
-              <Link href="/admin/vehicles/new">등록</Link>
-            </Button>
+            <AdminRegisterButton href="/admin/vehicles/new" />
           </>
         }
       >
@@ -63,7 +62,7 @@ export default async function AdminVehiclesListPage({ searchParams }: PageProps)
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <AdminEntityLink href={`/admin/vehicles/${row.id}`}>{row.vehicle_no}</AdminEntityLink>
+                  <AdminVehicleDetailLink vehicleId={row.id}>{row.vehicle_no}</AdminVehicleDetailLink>
                 </TableCell>
                 <TableCell>{row.car_name ?? "—"}</TableCell>
                 <TableCell>

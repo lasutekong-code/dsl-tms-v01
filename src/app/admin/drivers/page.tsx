@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import { AdminEntityLink } from "@/components/admin/admin-entity-link";
 import { AdminListActions } from "@/components/admin/admin-list-actions";
+import { AdminRegisterButton } from "@/components/admin/admin-register-button";
+import { AdminVehicleDetailLink } from "@/components/admin/admin-vehicle-detail-link";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,16 @@ export default async function AdminDriversListPage({ searchParams }: PageProps) 
 
   const { data: rawRows, count, error } = await query;
   const rows = (rawRows ?? []).map(decryptDriverRow);
+  const driverIds = rows.map((row) => row.id);
+  const { data: assignments } =
+    driverIds.length > 0
+      ? await supabase
+          .from("vehicle_assignments")
+          .select("driver_id, vehicle_id")
+          .in("driver_id", driverIds)
+          .eq("is_current", true)
+      : { data: [] as { driver_id: string; vehicle_id: string }[] };
+  const vehicleIdByDriver = new Map((assignments ?? []).map((row) => [row.driver_id, row.vehicle_id]));
 
   if (error) {
     return <p className="text-sm text-red-600">목록을 불러오지 못했습니다.</p>;
@@ -47,9 +58,7 @@ export default async function AdminDriversListPage({ searchParams }: PageProps) 
         toolbar={
           <>
             <AdminSearchBar defaultValue={q} />
-            <Button asChild>
-              <Link href="/admin/drivers/new">등록</Link>
-            </Button>
+            <AdminRegisterButton href="/admin/drivers/new" />
           </>
         }
       >
@@ -67,7 +76,9 @@ export default async function AdminDriversListPage({ searchParams }: PageProps) 
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <AdminEntityLink href={`/admin/drivers/${row.id}`}>{row.driver_name}</AdminEntityLink>
+                  <AdminVehicleDetailLink vehicleId={vehicleIdByDriver.get(row.id)}>
+                    {row.driver_name}
+                  </AdminVehicleDetailLink>
                 </TableCell>
                 <TableCell>{row.phone ?? "—"}</TableCell>
                 <TableCell>

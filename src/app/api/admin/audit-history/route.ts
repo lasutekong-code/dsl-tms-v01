@@ -7,6 +7,14 @@ import { isUuid } from "@/lib/vehicles/build-detail";
 
 export const dynamic = "force-dynamic";
 
+type AuditRow = {
+  id: string;
+  action: string;
+  profile_id: string | null;
+  created_at: string | null;
+  metadata: unknown;
+};
+
 export async function GET(request: NextRequest) {
   const gate = await getAdminOrResponse();
   if (!gate.ok) {
@@ -35,5 +43,23 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "이력 조회에 실패했습니다." }, { status: 500 });
   }
 
-  return NextResponse.json({ data: data ?? [] });
+  const rows = (data ?? []) as AuditRow[];
+  const profileIds = [...new Set(rows.map((row) => row.profile_id).filter((id): id is string => Boolean(id)))];
+  const emailByProfile = new Map<string, string>();
+
+  if (profileIds.length > 0) {
+    const { data: profiles } = await supabase.from("profiles").select("id, email").in("id", profileIds);
+    for (const profile of profiles ?? []) {
+      if (profile.email?.trim()) {
+        emailByProfile.set(profile.id, profile.email.trim());
+      }
+    }
+  }
+
+  return NextResponse.json({
+    data: rows.map((row) => ({
+      ...row,
+      login_id: row.profile_id ? (emailByProfile.get(row.profile_id) ?? null) : null,
+    })),
+  });
 }

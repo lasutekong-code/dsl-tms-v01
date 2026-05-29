@@ -14,6 +14,7 @@ const updateSchema = z.object({
   vehicle_id: uuidString.optional(),
   inspection_date: dateYmdSchema.optional(),
   inspection_type: optionalNullableTrimmedString,
+  inspection_station_name: optionalNullableTrimmedString,
   result: optionalNullableTrimmedString,
   memo: optionalNullableTrimmedString,
 });

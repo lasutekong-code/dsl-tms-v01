@@ -32,6 +32,16 @@ type AccessScope =
     };
 
 const SEARCHABLE_COLUMNS = ["client_name", "vehicle_no", "driver_name"] as const;
+const VEHICLE_PHOTO_BUCKET = "vehicle-photos";
+const DRIVER_PHOTO_BUCKET = "driver-photos";
+const VEHICLE_PHOTO_ORDER = ["front", "side", "rear"] as const;
+
+type PhotoRef = { bucket: string; path: string };
+
+type SearchPhotoMaps = {
+  photosByVehicle: Map<string, PhotoRef[]>;
+  driverPhotoByDriver: Map<string, PhotoRef>;
+};
 
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams.get("q")?.trim().slice(0, 100) ?? "";
@@ -107,7 +117,10 @@ export async function GET(request: NextRequest) {
     seenVehicleIds.add(vehicleId);
   }
 
-  const results = rows.map((row, index) => mapSearchResult(row, role, scope, index, duplicateVehicleIds));
+  const photoMaps = await loadSearchPhotoMaps(supabase, rows);
+  const results = rows.map((row, index) =>
+    mapSearchResult(row, role, scope, index, duplicateVehicleIds, photoMaps),
+  );
 
   await supabase.from("search_logs").insert({ user_id: user.id, query: q });
 
@@ -169,12 +182,55 @@ async function getAccessScope(
   };
 }
 
+async function loadSearchPhotoMaps(supabase: AppSupabaseClient, rows: VehicleCardRow[]): Promise<SearchPhotoMaps> {
+  const vehicleIds = [...new Set(rows.map((row) => String(row.vehicle_id)))];
+  const driverIds = [
+    ...new Set(rows.map((row) => row.driver_id).filter(Boolean).map((id) => String(id))),
+  ];
+
+  const [{ data: vehiclePhotos }, { data: driverPhotos }] = await Promise.all([
+    vehicleIds.length > 0
+      ? supabase.from("vehicle_photos").select("vehicle_id, photo_type, storage_path").in("vehicle_id", vehicleIds)
+      : Promise.resolve({ data: [] as { vehicle_id: string; photo_type: string; storage_path: string }[] }),
+    driverIds.length > 0
+      ? supabase.from("driver_photos").select("driver_id, storage_path").in("driver_id", driverIds)
+      : Promise.resolve({ data: [] as { driver_id: string; storage_path: string }[] }),
+  ]);
+
+  const grouped = new Map<string, { photo_type: string; bucket: string; path: string }[]>();
+  for (const photo of vehiclePhotos ?? []) {
+    const list = grouped.get(photo.vehicle_id) ?? [];
+    list.push({ photo_type: photo.photo_type, bucket: VEHICLE_PHOTO_BUCKET, path: photo.storage_path });
+    grouped.set(photo.vehicle_id, list);
+  }
+
+  const photosByVehicle = new Map<string, PhotoRef[]>();
+  for (const [vehicleId, list] of grouped) {
+    const sorted = [...list].sort(
+      (a, b) => VEHICLE_PHOTO_ORDER.indexOf(a.photo_type as (typeof VEHICLE_PHOTO_ORDER)[number]) -
+        VEHICLE_PHOTO_ORDER.indexOf(b.photo_type as (typeof VEHICLE_PHOTO_ORDER)[number]),
+    );
+    photosByVehicle.set(
+      vehicleId,
+      sorted.slice(0, 3).map((photo) => ({ bucket: photo.bucket, path: photo.path })),
+    );
+  }
+
+  const driverPhotoByDriver = new Map<string, PhotoRef>();
+  for (const photo of driverPhotos ?? []) {
+    driverPhotoByDriver.set(photo.driver_id, { bucket: DRIVER_PHOTO_BUCKET, path: photo.storage_path });
+  }
+
+  return { photosByVehicle, driverPhotoByDriver };
+}
+
 function mapSearchResult(
   row: VehicleCardRow,
   role: UserRole,
   scope: AccessScope,
   index: number,
   duplicateVehicleIds: Set<string>,
+  photoMaps: SearchPhotoMaps,
 ) {
   const vehicleId = String(row.vehicle_id);
   const canViewSensitive =
@@ -199,8 +255,10 @@ function mapSearchResult(
     driverId: row.driver_id ? String(row.driver_id) : null,
     driverName: typeof row.driver_name === "string" ? row.driver_name : null,
     driverPhone,
-    vehiclePhotos: [],
-    driverPhoto: null,
+    vehiclePhotos: photoMaps.photosByVehicle.get(vehicleId) ?? [],
+    driverPhoto: row.driver_id
+      ? (photoMaps.driverPhotoByDriver.get(String(row.driver_id)) ?? null)
+      : null,
   };
 }
 

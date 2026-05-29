@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { AdminOk } from "@/lib/admin/api-guard";
 import { insertAuditLog } from "@/lib/admin/audit-log";
+import { buildAsciiStoragePath } from "@/lib/admin/storage-path";
 import { uploadAdminStorageObject, removeAdminStorageObject } from "@/lib/admin/storage-upload";
 import type { Database } from "@/types/database";
 
@@ -43,8 +44,7 @@ export async function uploadContractFile(
     return { error: "pdf, docx, hwpx, txt 파일만 업로드할 수 있습니다." as const };
   }
 
-  const safeName = file.name.replace(/[^\w.\-가-힣]/g, "_");
-  const path = `${contractId}/${Date.now()}-${safeName}`;
+  const path = buildAsciiStoragePath(contractId, ext);
   const { error: uploadError } = await uploadAdminStorageObject(
     CONTRACT_FILE_BUCKET,
     path,

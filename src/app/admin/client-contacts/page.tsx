@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminRegisterButton } from "@/components/admin/admin-register-button";
 import { AdminEntityLink } from "@/components/admin/admin-entity-link";
 import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
@@ -54,9 +55,7 @@ export default async function AdminClientContactsPage({ searchParams }: PageProp
         toolbar={
           <>
             <AdminSearchBar defaultValue={q} />
-            <Button asChild>
-              <Link href="/admin/client-contacts/new">등록</Link>
-            </Button>
+            <AdminRegisterButton href="/admin/client-contacts/new" />
           </>
         }
       >

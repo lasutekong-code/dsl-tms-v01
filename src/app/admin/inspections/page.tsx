@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AdminListActions } from "@/components/admin/admin-list-actions";
+import { AdminRegisterButton } from "@/components/admin/admin-register-button";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
@@ -45,9 +46,7 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
         toolbar={
           <>
             <AdminSearchBar placeholder="검색…" />
-            <Button asChild>
-              <Link href="/admin/inspections/new">등록</Link>
-            </Button>
+            <AdminRegisterButton href="/admin/inspections/new" />
           </>
         }
       >
@@ -57,6 +56,7 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
               <TableHead>차량번호</TableHead>
               <TableHead>점검일</TableHead>
               <TableHead>유형</TableHead>
+              <TableHead>검사소</TableHead>
               <TableHead>결과</TableHead>
               <TableHead className="w-36" />
             </TableRow>
@@ -71,6 +71,7 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
                 </TableCell>
                 <TableCell>{formatDateKo(row.inspection_date)}</TableCell>
                 <TableCell>{row.inspection_type ?? "—"}</TableCell>
+                <TableCell>{row.inspection_station_name ?? "—"}</TableCell>
                 <TableCell>{row.result ?? "—"}</TableCell>
                 <TableCell>
                   <AdminListActions

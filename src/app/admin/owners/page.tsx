@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import { AdminEntityLink } from "@/components/admin/admin-entity-link";
 import { AdminListActions } from "@/components/admin/admin-list-actions";
+import { AdminRegisterButton } from "@/components/admin/admin-register-button";
+import { AdminVehicleDetailLink } from "@/components/admin/admin-vehicle-detail-link";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +31,16 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
 
   const { data: rawRows, count, error } = await query;
   const rows = (rawRows ?? []).map(decryptOwnerRow);
+  const ownerIds = rows.map((row) => row.id);
+  const { data: assignments } =
+    ownerIds.length > 0
+      ? await supabase
+          .from("vehicle_assignments")
+          .select("owner_id, vehicle_id")
+          .in("owner_id", ownerIds)
+          .eq("is_current", true)
+      : { data: [] as { owner_id: string; vehicle_id: string }[] };
+  const vehicleIdByOwner = new Map((assignments ?? []).map((row) => [row.owner_id, row.vehicle_id]));
 
   if (error) {
     return <p className="text-sm text-red-600">목록을 불러오지 못했습니다.</p>;
@@ -45,9 +56,7 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
         toolbar={
           <>
             <AdminSearchBar defaultValue={q} />
-            <Button asChild>
-              <Link href="/admin/owners/new">등록</Link>
-            </Button>
+            <AdminRegisterButton href="/admin/owners/new" />
           </>
         }
       >
@@ -66,7 +75,9 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <AdminEntityLink href={`/admin/owners/${row.id}`}>{row.owner_name}</AdminEntityLink>
+                  <AdminVehicleDetailLink vehicleId={vehicleIdByOwner.get(row.id)}>
+                    {row.owner_name}
+                  </AdminVehicleDetailLink>
                 </TableCell>
                 <TableCell>{row.owner_phone ?? "—"}</TableCell>
                 <TableCell>{row.business_no ?? "—"}</TableCell>
