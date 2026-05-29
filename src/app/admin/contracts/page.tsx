@@ -10,25 +10,49 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
 import { decryptPii } from "@/lib/crypto/pii";
+import {
+  adminListPageHref,
+  buildIlikeFilter,
+  buildInFilter,
+  findClientIdsByName,
+  findOwnerIdsByName,
+  findVehicleIdsByNo,
+} from "@/lib/admin/list-page-search";
 import { createClient } from "@/lib/supabase/server";
 import { CONTRACT_TYPES } from "@/types/admin";
 
 const PAGE_SIZE = 20;
 
-type PageProps = { searchParams?: Promise<{ page?: string }> };
+type PageProps = { searchParams?: Promise<{ q?: string; page?: string }> };
 
 export default async function AdminContractsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
+  const q = sp?.q?.trim() ?? "";
   const page = Math.max(1, Number.parseInt(sp?.page ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
   const supabase = await createClient();
-  const { data: rows, count, error } = await supabase
-    .from("contracts")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  let query = supabase.from("contracts").select("*", { count: "exact" }).order("created_at", { ascending: false });
+
+  if (q) {
+    const [vehicleIds, ownerIds, clientIds] = await Promise.all([
+      findVehicleIdsByNo(supabase, q),
+      findOwnerIdsByName(supabase, q),
+      findClientIdsByName(supabase, q),
+    ]);
+    const matchingContractTypes = CONTRACT_TYPES.filter((type) => type.label.includes(q)).map((type) => type.value);
+    const orParts = [
+      buildInFilter("vehicle_id", vehicleIds),
+      buildInFilter("owner_id", ownerIds),
+      buildInFilter("client_id", clientIds),
+      buildInFilter("contract_type", matchingContractTypes),
+      buildIlikeFilter("status", q),
+    ].filter((part): part is string => part != null);
+    query = query.or(orParts.join(","));
+  }
+
+  const { data: rows, count, error } = await query.range(from, to);
   const vehicleIds = [...new Set((rows ?? []).map((r) => r.vehicle_id))];
   const ownerIds = [...new Set((rows ?? []).map((r) => r.owner_id))];
   const clientIds = [...new Set((rows ?? []).map((r) => r.client_id))];
@@ -63,7 +87,7 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
       <AdminDataTableShell
         toolbar={
           <>
-            <AdminSearchBar placeholder="검색…" />
+            <AdminSearchBar placeholder="검색(차량번호, 사업주, 거래처, 계약유형 등)…" defaultValue={q} />
             <AdminRegisterButton href="/admin/contracts/new" />
           </>
         }
@@ -120,12 +144,12 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
           <div className="flex gap-2">
             {page > 1 ? (
               <Button asChild size="sm" variant="outline">
-                <Link href={`/admin/contracts?page=${page - 1}`}>이전</Link>
+                <Link href={adminListPageHref("/admin/contracts", page - 1, q)}>이전</Link>
               </Button>
             ) : null}
             {page < totalPages ? (
               <Button asChild size="sm" variant="outline">
-                <Link href={`/admin/contracts?page=${page + 1}`}>다음</Link>
+                <Link href={adminListPageHref("/admin/contracts", page + 1, q)}>다음</Link>
               </Button>
             ) : null}
           </div>

@@ -1,10 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { decryptAddressRow } from "@/lib/admin/pii-transform";
 import { formatAddress } from "@/lib/vehicles/format";
 import { DRIVER_PHOTO_BUCKET, VEHICLE_PHOTO_BUCKET } from "@/lib/vehicles/photo-url";
 import type { Database } from "@/types/database";
 import type {
-  AddressView,
   DriverPhoto,
   MemoVisibility,
   VehicleCardRow,
@@ -62,30 +62,51 @@ export async function buildVehicleDetailFromView(
   row: VehicleCardViewRow,
 ): Promise<VehicleDetail> {
   const vehicleId = String(row.vehicle_id);
+  const driverId = row.driver_id ? String(row.driver_id) : null;
+  const ownerId = pickString(row, ["owner_id"]);
 
-  const [photosResult, driverPhotoResult, addressesResult, memosResult] = await Promise.all([
+  const [photosResult, driverPhotoResult, driverAddressesResult, ownerAddressesResult, vehicleMemosResult, driverMemosResult, contractsResult] =
+    await Promise.all([
     supabase
       .from("vehicle_photos")
       .select("id, photo_type, storage_path")
       .eq("vehicle_id", vehicleId)
       .in("photo_type", PHOTO_ORDER),
-    row.driver_id
+    driverId
       ? supabase
           .from("driver_photos")
           .select("id, storage_path")
-          .eq("driver_id", String(row.driver_id))
+          .eq("driver_id", driverId)
           .limit(1)
           .maybeSingle()
       : Promise.resolve({ data: null, error: null }),
-    supabase
-      .from("addresses")
-      .select("address_type, zip_code, address1, address2")
-      .is("owner_id", null)
-      .is("driver_id", null),
+    driverId
+      ? supabase
+          .from("addresses")
+          .select("address_type, zip_code, address1, address2")
+          .eq("driver_id", driverId)
+      : Promise.resolve({ data: [], error: null }),
+    ownerId
+      ? supabase
+          .from("addresses")
+          .select("address_type, zip_code, address1, address2")
+          .eq("owner_id", ownerId)
+      : Promise.resolve({ data: [], error: null }),
     supabase
       .from("memos")
       .select("id, memo_type, content, visibility, created_at")
       .eq("vehicle_id", vehicleId),
+    driverId
+      ? supabase
+          .from("memos")
+          .select("id, memo_type, content, visibility, created_at")
+          .eq("driver_id", driverId)
+      : Promise.resolve({ data: [], error: null }),
+    supabase
+      .from("contracts")
+      .select("contract_type, contract_start_date, contract_end_date, status")
+      .eq("vehicle_id", vehicleId)
+      .order("contract_start_date", { ascending: false }),
   ]);
 
   const photoMap = new Map<string, VehiclePhoto>();
@@ -112,17 +133,48 @@ export async function buildVehicleDetailFromView(
       },
   );
 
-  const addresses = (addressesResult.data ?? []) as AddressView[];
+  const addresses = [...(driverAddressesResult.data ?? []), ...(ownerAddressesResult.data ?? [])].map((item) =>
+    decryptAddressRow({
+      id: "",
+      address_type: item.address_type,
+      zip_code: item.zip_code,
+      address1: item.address1,
+      address2: item.address2,
+    }),
+  );
   const home = addresses.find((item) => item.address_type === "home");
   const mailing = addresses.find((item) => item.address_type === "mailing");
 
-  const memos: VehicleMemo[] = (memosResult.data ?? []).map((memo) => ({
-    id: memo.id,
-    memo_type: memo.memo_type,
-    content: memo.content,
-    visibility: (memo.visibility ?? "shared") as MemoVisibility,
-    created_at: memo.created_at,
-  }));
+  const memoById = new Map<string, VehicleMemo>();
+  for (const memo of [...(vehicleMemosResult.data ?? []), ...(driverMemosResult.data ?? [])]) {
+    memoById.set(memo.id, {
+      id: memo.id,
+      memo_type: memo.memo_type,
+      content: memo.content,
+      visibility: (memo.visibility ?? "shared") as MemoVisibility,
+      created_at: memo.created_at,
+    });
+  }
+
+  const memos = [...memoById.values()].sort((a, b) => {
+    const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+    const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+    return bTime - aTime;
+  });
+
+  const contractByType = new Map<string, { contract_start_date: string; contract_end_date: string | null }>();
+  for (const contract of contractsResult.data ?? []) {
+    if (!contractByType.has(contract.contract_type)) {
+      contractByType.set(contract.contract_type, {
+        contract_start_date: contract.contract_start_date,
+        contract_end_date: contract.contract_end_date,
+      });
+    }
+  }
+
+  const consignment = contractByType.get("consignment");
+  const vehicleService = contractByType.get("vehicle_service");
+  const shipperCargo = contractByType.get("shipper_cargo");
 
   return {
     vehicle_id: vehicleId,
@@ -165,10 +217,17 @@ export async function buildVehicleDetailFromView(
     latest_inspection_date: pickString(row, ["latest_inspection_date"]),
     inspection_result: pickString(row, ["inspection_result"]),
     inspection_memo: pickString(row, ["inspection_memo"]),
-    consignment_contract_date: pickString(row, ["consignment_contract_date"]),
-    consignment_contract_end_date: pickString(row, ["consignment_contract_end_date"]),
-    service_contract_date: pickString(row, ["service_contract_date"]),
-    service_contract_end_date: pickString(row, ["service_contract_end_date"]),
+    consignment_contract_date:
+      consignment?.contract_start_date ?? pickString(row, ["consignment_contract_date"]),
+    consignment_contract_end_date:
+      consignment?.contract_end_date ?? pickString(row, ["consignment_contract_end_date"]),
+    service_contract_date: vehicleService?.contract_start_date ?? pickString(row, ["service_contract_date"]),
+    service_contract_end_date:
+      vehicleService?.contract_end_date ?? pickString(row, ["service_contract_end_date"]),
+    shipper_cargo_contract_date:
+      shipperCargo?.contract_start_date ?? pickString(row, ["shipper_cargo_contract_date"]),
+    shipper_cargo_contract_end_date:
+      shipperCargo?.contract_end_date ?? pickString(row, ["shipper_cargo_contract_end_date"]),
     home_address:
       pickString(row, ["home_address"]) ??
       (home ? formatAddress(home) : null),

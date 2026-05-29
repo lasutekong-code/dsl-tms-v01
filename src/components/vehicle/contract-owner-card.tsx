@@ -14,9 +14,11 @@ export function ContractOwnerCard({ detail }: { detail: VehicleDetail }) {
         <DetailFieldGrid>
           <DetailField label="위수탁계약일" value={formatDate(detail.consignment_contract_date)} />
           <DetailField label="차량용역계약일" value={formatDate(detail.service_contract_date)} />
+          <DetailField label="화주물량계약일" value={formatDate(detail.shipper_cargo_contract_date)} />
           <DetailField label="사업자등록일" value={formatDate(detail.business_start_date)} />
           <DetailField label="위수탁계약해지일" value={formatDate(detail.consignment_contract_end_date)} />
           <DetailField label="차량용역계약해지일" value={formatDate(detail.service_contract_end_date)} />
+          <DetailField label="화주물량계약해지일" value={formatDate(detail.shipper_cargo_contract_end_date)} />
           <DetailField label="사업자폐업일" value={formatDate(detail.business_closed_date)} />
           <DetailField label="사업주명" value={detail.owner_name} />
           <DetailField label="사업주연락처" value={detail.owner_phone} />

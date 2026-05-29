@@ -45,6 +45,8 @@ export const MOCK_VEHICLE_DETAIL: VehicleDetail = {
   consignment_contract_end_date: null,
   service_contract_date: "2024-01-01",
   service_contract_end_date: null,
+  shipper_cargo_contract_date: "2024-01-01",
+  shipper_cargo_contract_end_date: null,
   home_address: "서울특별시 송파구 문정동 123",
   mailing_address: "서울특별시 송파구 문정동 456",
   vehicle_photos: [

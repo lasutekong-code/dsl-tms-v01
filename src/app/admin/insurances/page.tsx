@@ -8,24 +8,37 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
 import { decryptPii } from "@/lib/crypto/pii";
+import {
+  adminListPageHref,
+  buildIlikeFilter,
+  buildInFilter,
+  findVehicleIdsByNo,
+} from "@/lib/admin/list-page-search";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 20;
 
-type PageProps = { searchParams?: Promise<{ page?: string }> };
+type PageProps = { searchParams?: Promise<{ q?: string; page?: string }> };
 
 export default async function AdminInsurancesPage({ searchParams }: PageProps) {
   const sp = await searchParams;
+  const q = sp?.q?.trim() ?? "";
   const page = Math.max(1, Number.parseInt(sp?.page ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
   const supabase = await createClient();
-  const { data: rows, count, error } = await supabase
-    .from("insurances")
-    .select("*", { count: "exact" })
-    .order("created_at", { ascending: false })
-    .range(from, to);
+  let query = supabase.from("insurances").select("*", { count: "exact" }).order("created_at", { ascending: false });
+
+  if (q) {
+    const vehicleIds = await findVehicleIdsByNo(supabase, q);
+    const orParts = [buildInFilter("vehicle_id", vehicleIds), buildIlikeFilter("insurance_company", q)].filter(
+      (part): part is string => part != null,
+    );
+    query = query.or(orParts.join(","));
+  }
+
+  const { data: rows, count, error } = await query.range(from, to);
   const vehicleIds = [...new Set((rows ?? []).map((r) => r.vehicle_id))];
   const [{ data: vehicles }, { data: assignments }, { data: drivers }] = await Promise.all([
     vehicleIds.length > 0
@@ -60,7 +73,7 @@ export default async function AdminInsurancesPage({ searchParams }: PageProps) {
       <AdminDataTableShell
         toolbar={
           <>
-            <AdminSearchBar placeholder="검색…" />
+            <AdminSearchBar placeholder="검색(차량번호, 보험사 등)…" defaultValue={q} />
             <AdminRegisterButton href="/admin/insurances/new" />
           </>
         }
@@ -105,12 +118,12 @@ export default async function AdminInsurancesPage({ searchParams }: PageProps) {
           <div className="flex gap-2">
             {page > 1 ? (
               <Button asChild size="sm" variant="outline">
-                <Link href={`/admin/insurances?page=${page - 1}`}>이전</Link>
+                <Link href={adminListPageHref("/admin/insurances", page - 1, q)}>이전</Link>
               </Button>
             ) : null}
             {page < totalPages ? (
               <Button asChild size="sm" variant="outline">
-                <Link href={`/admin/insurances?page=${page + 1}`}>다음</Link>
+                <Link href={adminListPageHref("/admin/insurances", page + 1, q)}>다음</Link>
               </Button>
             ) : null}
           </div>

@@ -7,24 +7,43 @@ import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
+import {
+  adminListPageHref,
+  buildIlikeFilter,
+  buildInFilter,
+  findVehicleIdsByNo,
+} from "@/lib/admin/list-page-search";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 20;
 
-type PageProps = { searchParams?: Promise<{ page?: string }> };
+type PageProps = { searchParams?: Promise<{ q?: string; page?: string }> };
 
 export default async function AdminInspectionsPage({ searchParams }: PageProps) {
   const sp = await searchParams;
+  const q = sp?.q?.trim() ?? "";
   const page = Math.max(1, Number.parseInt(sp?.page ?? "1", 10) || 1);
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE - 1;
 
   const supabase = await createClient();
-  const { data: rows, count, error } = await supabase
+  let query = supabase
     .from("vehicle_inspections")
     .select("*", { count: "exact" })
-    .order("inspection_date", { ascending: false })
-    .range(from, to);
+    .order("inspection_date", { ascending: false });
+
+  if (q) {
+    const vehicleIds = await findVehicleIdsByNo(supabase, q);
+    const orParts = [
+      buildInFilter("vehicle_id", vehicleIds),
+      buildIlikeFilter("inspection_station_name", q),
+      buildIlikeFilter("inspection_type", q),
+      buildIlikeFilter("result", q),
+    ].filter((part): part is string => part != null);
+    query = query.or(orParts.join(","));
+  }
+
+  const { data: rows, count, error } = await query.range(from, to);
   const vehicleIds = [...new Set((rows ?? []).map((r) => r.vehicle_id))];
   const { data: vehicles } =
     vehicleIds.length > 0
@@ -45,7 +64,7 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
       <AdminDataTableShell
         toolbar={
           <>
-            <AdminSearchBar placeholder="검색…" />
+            <AdminSearchBar placeholder="검색(차량번호, 검사소, 유형 등)…" defaultValue={q} />
             <AdminRegisterButton href="/admin/inspections/new" />
           </>
         }
@@ -90,12 +109,12 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
           <div className="flex gap-2">
             {page > 1 ? (
               <Button asChild size="sm" variant="outline">
-                <Link href={`/admin/inspections?page=${page - 1}`}>이전</Link>
+                <Link href={adminListPageHref("/admin/inspections", page - 1, q)}>이전</Link>
               </Button>
             ) : null}
             {page < totalPages ? (
               <Button asChild size="sm" variant="outline">
-                <Link href={`/admin/inspections?page=${page + 1}`}>다음</Link>
+                <Link href={adminListPageHref("/admin/inspections", page + 1, q)}>다음</Link>
               </Button>
             ) : null}
           </div>
