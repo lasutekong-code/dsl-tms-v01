@@ -24,3 +24,6 @@ pnpm-debug.log*
 
 # typescript
 *.tsbuildinfo
+
+# Next.js 자동 생성 파일
+next-env.d.ts
