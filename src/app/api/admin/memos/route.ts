@@ -54,7 +54,12 @@ export async function POST(request: NextRequest) {
 
   const { data, error } = await supabase.from("memos").insert(insertRow).select("*").single();
 
-  if (error || !data) {
+  if (error) {
+    console.error("memos insert failed", error.message);
+    return NextResponse.json({ error: "저장 중 오류가 발생했습니다." }, { status: 500 });
+  }
+
+  if (!data) {
     return NextResponse.json({ error: "저장 중 오류가 발생했습니다." }, { status: 500 });
   }
 

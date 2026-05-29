@@ -4,6 +4,7 @@ import { DriverAddressesPanel } from "@/components/forms/driver-addresses-panel"
 import { DriverForm } from "@/components/forms/driver-form";
 import { DriverMemosPanel } from "@/components/forms/driver-memos-panel";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { decryptAddressRow, decryptDriverRow } from "@/lib/admin/pii-transform";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -22,12 +23,15 @@ export default async function AdminDriversEditPage({ params }: PageProps) {
     notFound();
   }
 
+  const decryptedDriver = decryptDriverRow(driver);
+  const decryptedAddresses = (addresses ?? []).map(decryptAddressRow);
+
   return (
     <div className="space-y-12">
-      <DriverForm mode="edit" defaultValues={driver} />
+      <DriverForm mode="edit" defaultValues={decryptedDriver} />
       <div className="border-t border-slate-200 pt-10" id="driver-addresses">
         <AdminPageHeader title="운전자 주소" description="자택·우편 주소를 이 운전자에 연결해 저장합니다." />
-        <DriverAddressesPanel driverId={id} addresses={addresses ?? []} />
+        <DriverAddressesPanel driverId={id} addresses={decryptedAddresses} />
       </div>
       <div className="border-t border-slate-200 pt-10" id="driver-memos">
         <AdminPageHeader title="운전자 메모" description="내부 메모를 등록하고 목록에서 수정할 수 있습니다." />

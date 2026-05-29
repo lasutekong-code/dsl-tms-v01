@@ -8,8 +8,11 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
+import { DateYmdInput } from "@/components/admin/date-ymd-input";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { VEHICLE_STATUS_LABELS } from "@/types/admin";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -129,6 +132,9 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
   return (
     <div className="space-y-6">
       <AdminPageHeader title={mode === "create" ? "차량 등록" : "차량 수정"} description="차량 기본정보를 입력합니다." />
+      {mode === "edit" && defaultValues?.id ? (
+        <AdminRecordMeta updatedAt={defaultValues.updated_at} targetTable="vehicles" targetId={defaultValues.id} />
+      ) : null}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AdminSectionCard title="차량 기본정보" sectionId="sec-vehicle-basic">
           <FieldGrid>
@@ -145,10 +151,13 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
               <Label htmlFor="car_name">차명</Label>
               <Input id="car_name" {...form.register("car_name")} />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="registration_date">등록일</Label>
-              <Input id="registration_date" type="date" {...form.register("registration_date")} />
-            </div>
+            <Controller
+              control={form.control}
+              name="registration_date"
+              render={({ field }) => (
+                <DateYmdInput id="registration_date" label="등록일" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
             <div className="space-y-2">
               <Label htmlFor="model_year">연식</Label>
               <Input id="model_year" type="number" min={0} {...form.register("model_year")} />
@@ -182,7 +191,7 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
               <Input id="height_mm" type="number" min={0} {...form.register("height_mm")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="max_load_kg">최대적재량(mm 단위 화면요청)</Label>
+              <Label htmlFor="max_load_kg">최대적재량(kg)</Label>
               <Input id="max_load_kg" type="number" min={0} {...form.register("max_load_kg")} />
             </div>
             <div className="space-y-2">
@@ -198,7 +207,7 @@ export function VehicleForm({ mode, defaultValues }: { mode: "create" | "edit"; 
                     <SelectContent>
                       {STATUSES.map((s) => (
                         <SelectItem key={s} value={s}>
-                          {s}
+                          {VEHICLE_STATUS_LABELS[s] ?? s}
                         </SelectItem>
                       ))}
                     </SelectContent>

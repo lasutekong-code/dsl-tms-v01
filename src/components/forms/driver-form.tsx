@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
+import { DateYmdInput } from "@/components/admin/date-ymd-input";
+import { ResidentIdInput } from "@/components/admin/resident-id-input";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
@@ -17,6 +20,11 @@ import { Label } from "@/components/ui/label";
 import { dateYmdSchema, phoneSchema } from "@/lib/admin/zod-util";
 import type { DriverRow } from "@/types/database";
 
+const rrnSchema = z
+  .string()
+  .optional()
+  .refine((v) => !v || /^\d{6}-\d{7}$/.test(v), "주민등록번호 형식이 올바르지 않습니다 (######-#######).");
+
 const formSchema = z.object({
   profile_id: z.string().optional(),
   driver_name: z.string().trim().min(1, "운전자명은 필수입니다."),
@@ -24,6 +32,7 @@ const formSchema = z.object({
   phone: z.string().trim().min(1, "전화번호는 필수입니다."),
   driver_license_no: z.string().trim().optional(),
   cargo_license_no: z.string().trim().optional(),
+  resident_registration_number: rrnSchema,
   is_active: z.boolean(),
 });
 
@@ -49,6 +58,7 @@ export function DriverForm({ mode, defaultValues }: { mode: "create" | "edit"; d
       phone: defaultValues?.phone ?? "",
       driver_license_no: defaultValues?.driver_license_no ?? "",
       cargo_license_no: defaultValues?.cargo_license_no ?? "",
+      resident_registration_number: defaultValues?.resident_registration_number ?? "",
       is_active: defaultValues?.is_active ?? true,
     },
   });
@@ -80,6 +90,9 @@ export function DriverForm({ mode, defaultValues }: { mode: "create" | "edit"; d
         phone: phoneOk.data,
         driver_license_no: values.driver_license_no?.trim() ? values.driver_license_no.trim() : null,
         cargo_license_no: values.cargo_license_no?.trim() ? values.cargo_license_no.trim() : null,
+        resident_registration_number: values.resident_registration_number?.trim()
+          ? values.resident_registration_number.trim()
+          : null,
         is_active: values.is_active,
       };
 
@@ -118,6 +131,9 @@ export function DriverForm({ mode, defaultValues }: { mode: "create" | "edit"; d
   return (
     <div className="space-y-6">
       <AdminPageHeader title={mode === "create" ? "운전자 등록" : "운전자 수정"} description="운전자 기본정보를 입력합니다." />
+      {mode === "edit" && defaultValues?.id ? (
+        <AdminRecordMeta updatedAt={defaultValues.updated_at} targetTable="drivers" targetId={defaultValues.id} />
+      ) : null}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AdminSectionCard title="기본 정보" sectionId="sec-driver-basic">
           <FieldGrid>
@@ -137,13 +153,20 @@ export function DriverForm({ mode, defaultValues }: { mode: "create" | "edit"; d
               <Input id="phone" {...form.register("phone")} />
               {form.formState.errors.phone ? <p className="text-sm text-red-600">{form.formState.errors.phone.message}</p> : null}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="birth_date">생년월일</Label>
-              <Input id="birth_date" type="date" {...form.register("birth_date")} />
-              {form.formState.errors.birth_date ? (
-                <p className="text-sm text-red-600">{form.formState.errors.birth_date.message}</p>
-              ) : null}
-            </div>
+            <Controller
+              control={form.control}
+              name="birth_date"
+              render={({ field }) => (
+                <DateYmdInput id="birth_date" label="생년월일" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="resident_registration_number"
+              render={({ field }) => (
+                <ResidentIdInput id="resident_registration_number" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
             <div className="space-y-2">
               <Label htmlFor="profile_id">프로필 ID (선택)</Label>
               <Input id="profile_id" {...form.register("profile_id")} />

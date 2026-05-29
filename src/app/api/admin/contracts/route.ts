@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-const CONTRACT_TYPES = ["consignment", "service"] as const;
+const CONTRACT_TYPES = ["consignment", "vehicle_service", "shipper_cargo"] as const;
 const CONTRACT_STATUSES = ["active", "terminated", "expired"] as const;
 
 const createSchema = z.object({

@@ -2,7 +2,16 @@
 
 export const CONTRACT_TYPES = [
   { value: "consignment", label: "위수탁계약" },
+  { value: "vehicle_service", label: "차량용역계약" },
+  { value: "shipper_cargo", label: "화주물량계약" },
 ] as const;
+
+export const VEHICLE_STATUS_LABELS: Record<string, string> = {
+  active: "운행중",
+  inactive: "운휴",
+  suspended: "운행정지",
+  terminated: "말소",
+};
 
 export const CONTRACT_STATUSES = [
   { value: "active", label: "진행중" },

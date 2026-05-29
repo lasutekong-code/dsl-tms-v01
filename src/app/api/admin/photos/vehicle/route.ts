@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
 import { validatePhotoFile } from "@/lib/admin/photo-file";
+import { uploadAdminStorageObject } from "@/lib/admin/storage-upload";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
@@ -65,11 +66,7 @@ export async function POST(request: NextRequest) {
   const supabase = await createClient();
   const buffer = Buffer.from(await file.arrayBuffer());
 
-  const { error: uploadError } = await supabase.storage.from(BUCKET).upload(storagePath, buffer, {
-    upsert: true,
-    contentType: mime,
-  });
-
+  const { error: uploadError } = await uploadAdminStorageObject(BUCKET, storagePath, buffer, mime);
   if (uploadError) {
     return NextResponse.json({ error: "스토리지 업로드에 실패했습니다." }, { status: 500 });
   }
@@ -84,8 +81,8 @@ export async function POST(request: NextRequest) {
   const row = {
     vehicle_id: vehicleId,
     photo_type: photoType,
-    bucket: BUCKET,
     storage_path: storagePath,
+    uploaded_by: gate.admin.profileId,
   };
 
   const op = existing?.id

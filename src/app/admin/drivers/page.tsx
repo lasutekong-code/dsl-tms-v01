@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
+import { decryptDriverRow } from "@/lib/admin/pii-transform";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 20;
@@ -27,7 +28,8 @@ export default async function AdminDriversListPage({ searchParams }: PageProps) 
     query = query.ilike("driver_name", `%${q}%`);
   }
 
-  const { data: rows, count, error } = await query;
+  const { data: rawRows, count, error } = await query;
+  const rows = (rawRows ?? []).map(decryptDriverRow);
 
   if (error) {
     return <p className="text-sm text-red-600">목록을 불러오지 못했습니다.</p>;

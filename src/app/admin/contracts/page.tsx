@@ -6,7 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
+import { decryptPii } from "@/lib/crypto/pii";
 import { createClient } from "@/lib/supabase/server";
+import { CONTRACT_TYPES } from "@/types/admin";
 
 const PAGE_SIZE = 20;
 
@@ -39,9 +41,11 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
       : Promise.resolve({ data: [] as { id: string; client_name: string | null }[] }),
   ]);
   const vehicleById = new Map((vehicles ?? []).map((v) => [v.id, v.vehicle_no ?? "—"]));
-  const ownerById = new Map((owners ?? []).map((o) => [o.id, o.owner_name ?? "—"]));
+  const ownerById = new Map(
+    (owners ?? []).map((o) => [o.id, decryptPii(o.owner_name) ?? o.owner_name ?? "—"]),
+  );
   const clientById = new Map((clients ?? []).map((c) => [c.id, c.client_name ?? "—"]));
-  const contractTypeLabel = (value: string) => (value === "service" ? "용역" : value === "consignment" ? "위수탁" : value);
+  const contractTypeLabel = (value: string) => CONTRACT_TYPES.find((t) => t.value === value)?.label ?? value;
 
   if (error) {
     return <p className="text-sm text-red-600">목록을 불러오지 못했습니다.</p>;

@@ -49,6 +49,7 @@ export type DriverRow = {
   phone: string | null;
   driver_license_no: string | null;
   cargo_license_no: string | null;
+  resident_registration_number?: string | null;
   is_active: boolean | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -183,17 +184,17 @@ export type MemoRow = {
 export type VehiclePhotoRow = {
   id: string;
   vehicle_id: string;
-  photo_type: string | null;
-  bucket: string | null;
+  photo_type: string;
   storage_path: string;
+  uploaded_by?: string | null;
   created_at?: string | null;
 };
 
 export type DriverPhotoRow = {
   id: string;
   driver_id: string;
-  bucket: string | null;
   storage_path: string;
+  uploaded_by?: string | null;
   created_at?: string | null;
 };
 

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { OwnerForm } from "@/components/forms/owner-form";
+import { decryptOwnerRow } from "@/lib/admin/pii-transform";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -13,5 +14,5 @@ export default async function AdminOwnersEditPage({ params }: PageProps) {
     notFound();
   }
 
-  return <OwnerForm mode="edit" defaultValues={data} />;
+  return <OwnerForm mode="edit" defaultValues={decryptOwnerRow(data)} />;
 }
