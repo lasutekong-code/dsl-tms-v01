@@ -1,12 +1,53 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import { deleteContractFile, getUploadFileFromForm, uploadContractFile } from "@/lib/admin/contract-file";
+import {
+  CONTRACT_FILE_BUCKET,
+  deleteContractFile,
+  getUploadFileFromForm,
+  uploadContractFile,
+} from "@/lib/admin/contract-file";
+import { createServiceRoleClient } from "@/lib/supabase/service-role";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const gate = await getAdminOrResponse();
+  if (!gate.ok) {
+    return gate.response;
+  }
+
+  const { id } = await context.params;
+  if (!isUuid(id)) {
+    return NextResponse.json({ error: "잘못된 ID입니다." }, { status: 400 });
+  }
+
+  const supabase = await createClient();
+  const { data: contract } = await supabase
+    .from("contracts")
+    .select("contract_file_bucket, contract_file_path, contract_file_name")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (!contract?.contract_file_path) {
+    return NextResponse.json({ error: "첨부된 계약서 파일이 없습니다." }, { status: 404 });
+  }
+
+  const bucket = contract.contract_file_bucket ?? CONTRACT_FILE_BUCKET;
+  const storage = createServiceRoleClient() ?? supabase;
+  const { data, error } = await storage.storage.from(bucket).createSignedUrl(contract.contract_file_path, 300, {
+    download: contract.contract_file_name ?? "contract-file",
+  });
+
+  if (error || !data?.signedUrl) {
+    return NextResponse.json({ error: "파일 다운로드 URL 생성에 실패했습니다." }, { status: 500 });
+  }
+
+  return NextResponse.redirect(data.signedUrl);
+}
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const gate = await getAdminOrResponse();

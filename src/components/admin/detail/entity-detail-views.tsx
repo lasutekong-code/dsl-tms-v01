@@ -355,7 +355,23 @@ export function ContractDetailView({
             value={<Badge variant="secondary">{contractStatusLabel(data.status)}</Badge>}
           />
           <DetailField label="메모" value={data.memo} fullWidth />
-          <DetailField label="계약서 파일" value={data.contract_file_name ?? "—"} fullWidth />
+          <DetailField
+            label="계약서 파일"
+            value={
+              data.contract_file_path && data.contract_file_name ? (
+                <Link
+                  href={`/api/admin/contracts/${data.id}/file`}
+                  className="text-blue-600 hover:underline"
+                  prefetch={false}
+                >
+                  {data.contract_file_name}
+                </Link>
+              ) : (
+                "—"
+              )
+            }
+            fullWidth
+          />
         </DetailFieldGrid>
       </AdminSectionCard>
       <AdminDetailFooter listHref="/admin/contracts" editHref={`/admin/contracts/${data.id}/edit`} />
