@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AdminEntityLink } from "@/components/admin/admin-entity-link";
+import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -78,13 +80,17 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
               <TableHead>시작일</TableHead>
               <TableHead>종료일</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-28" />
+              <TableHead className="w-36" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell>{contractTypeLabel(row.contract_type)}</TableCell>
+                <TableCell>
+                  <AdminEntityLink href={`/admin/contracts/${row.id}`}>
+                    {contractTypeLabel(row.contract_type)}
+                  </AdminEntityLink>
+                </TableCell>
                 <TableCell>{ownerById.get(row.owner_id) ?? "—"}</TableCell>
                 <TableCell>{clientById.get(row.client_id) ?? "—"}</TableCell>
                 <TableCell>
@@ -99,9 +105,10 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
                 <TableCell>{row.contract_end_date ? formatDateKo(row.contract_end_date) : "—"}</TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>
                 <TableCell>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/contracts/${row.id}/edit`}>수정</Link>
-                  </Button>
+                  <AdminListActions
+                    viewHref={`/admin/contracts/${row.id}`}
+                    editHref={`/admin/contracts/${row.id}/edit`}
+                  />
                 </TableCell>
               </TableRow>
             ))}

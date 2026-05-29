@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ export default async function AdminInsurancesPage({ searchParams }: PageProps) {
               <TableHead>보험사</TableHead>
               <TableHead>갱신일</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-28" />
+              <TableHead className="w-36" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -89,9 +90,10 @@ export default async function AdminInsurancesPage({ searchParams }: PageProps) {
                 <TableCell>{row.renewal_date ? formatDateKo(row.renewal_date) : "—"}</TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>
                 <TableCell>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/insurances/${row.id}/edit`}>수정</Link>
-                  </Button>
+                  <AdminListActions
+                    viewHref={`/admin/insurances/${row.id}`}
+                    editHref={`/admin/insurances/${row.id}/edit`}
+                  />
                 </TableCell>
               </TableRow>
             ))}

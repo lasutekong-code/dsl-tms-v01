@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AdminEntityLink } from "@/components/admin/admin-entity-link";
+import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -66,13 +68,15 @@ export default async function AdminClientContactsPage({ searchParams }: PageProp
               <TableHead>전화</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-28" />
+              <TableHead className="w-36" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.contact_name}</TableCell>
+                <TableCell>
+                  <AdminEntityLink href={`/admin/client-contacts/${row.id}`}>{row.contact_name}</AdminEntityLink>
+                </TableCell>
                 <TableCell>{clientMap.get(row.client_id) ?? "—"}</TableCell>
                 <TableCell>{row.phone ?? "—"}</TableCell>
                 <TableCell>
@@ -80,9 +84,10 @@ export default async function AdminClientContactsPage({ searchParams }: PageProp
                 </TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>
                 <TableCell>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/client-contacts/${row.id}/edit`}>수정</Link>
-                  </Button>
+                  <AdminListActions
+                    viewHref={`/admin/client-contacts/${row.id}`}
+                    editHref={`/admin/client-contacts/${row.id}/edit`}
+                  />
                 </TableCell>
               </TableRow>
             ))}

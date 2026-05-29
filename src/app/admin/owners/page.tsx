@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AdminEntityLink } from "@/components/admin/admin-entity-link";
+import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -57,13 +59,15 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
               <TableHead>사업자번호</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-28" />
+              <TableHead className="w-36" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.owner_name}</TableCell>
+                <TableCell>
+                  <AdminEntityLink href={`/admin/owners/${row.id}`}>{row.owner_name}</AdminEntityLink>
+                </TableCell>
                 <TableCell>{row.owner_phone ?? "—"}</TableCell>
                 <TableCell>{row.business_no ?? "—"}</TableCell>
                 <TableCell>
@@ -71,9 +75,7 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
                 </TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>
                 <TableCell>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/owners/${row.id}/edit`}>수정</Link>
-                  </Button>
+                  <AdminListActions viewHref={`/admin/owners/${row.id}`} editHref={`/admin/owners/${row.id}/edit`} />
                 </TableCell>
               </TableRow>
             ))}

@@ -14,6 +14,7 @@ export async function GET() {
     data: {
       profileId: gate.admin.profileId,
       userId: gate.admin.userId,
+      loginId: gate.admin.loginId,
     },
   });
 }

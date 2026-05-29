@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AdminEntityLink } from "@/components/admin/admin-entity-link";
+import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -58,28 +60,35 @@ export default async function AdminDriversListPage({ searchParams }: PageProps) 
               <TableHead>전화</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-52" />
+              <TableHead className="w-64" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.driver_name}</TableCell>
+                <TableCell>
+                  <AdminEntityLink href={`/admin/drivers/${row.id}`}>{row.driver_name}</AdminEntityLink>
+                </TableCell>
                 <TableCell>{row.phone ?? "—"}</TableCell>
                 <TableCell>
                   <Badge variant={row.is_active ? "success" : "outline"}>{row.is_active ? "활성" : "비활성"}</Badge>
                 </TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>
-                <TableCell className="flex flex-wrap gap-1">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/drivers/${row.id}/edit`}>수정</Link>
-                  </Button>
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href={`/admin/drivers/${row.id}/edit#driver-addresses`}>주소·메모</Link>
-                  </Button>
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href={`/admin/drivers/${row.id}/photo`}>사진</Link>
-                  </Button>
+                <TableCell>
+                  <AdminListActions
+                    viewHref={`/admin/drivers/${row.id}`}
+                    editHref={`/admin/drivers/${row.id}/edit`}
+                    extra={
+                      <>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link href={`/admin/drivers/${row.id}/edit#driver-addresses`}>주소·메모</Link>
+                        </Button>
+                        <Button asChild size="sm" variant="ghost">
+                          <Link href={`/admin/drivers/${row.id}/photo`}>사진</Link>
+                        </Button>
+                      </>
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ))}

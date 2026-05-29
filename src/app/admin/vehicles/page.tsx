@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AdminEntityLink } from "@/components/admin/admin-entity-link";
+import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -54,25 +56,30 @@ export default async function AdminVehiclesListPage({ searchParams }: PageProps)
               <TableHead>차명</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-40" />
+              <TableHead className="w-52" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.vehicle_no}</TableCell>
+                <TableCell>
+                  <AdminEntityLink href={`/admin/vehicles/${row.id}`}>{row.vehicle_no}</AdminEntityLink>
+                </TableCell>
                 <TableCell>{row.car_name ?? "—"}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{row.status ?? "—"}</Badge>
                 </TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>
-                <TableCell className="flex flex-wrap gap-1">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/vehicles/${row.id}/edit`}>수정</Link>
-                  </Button>
-                  <Button asChild size="sm" variant="ghost">
-                    <Link href={`/admin/vehicles/${row.id}/photos`}>사진</Link>
-                  </Button>
+                <TableCell>
+                  <AdminListActions
+                    viewHref={`/admin/vehicles/${row.id}`}
+                    editHref={`/admin/vehicles/${row.id}/edit`}
+                    extra={
+                      <Button asChild size="sm" variant="ghost">
+                        <Link href={`/admin/vehicles/${row.id}/photos`}>사진</Link>
+                      </Button>
+                    }
+                  />
                 </TableCell>
               </TableRow>
             ))}

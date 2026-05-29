@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
@@ -57,7 +58,7 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
               <TableHead>점검일</TableHead>
               <TableHead>유형</TableHead>
               <TableHead>결과</TableHead>
-              <TableHead className="w-28" />
+              <TableHead className="w-36" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -72,9 +73,10 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
                 <TableCell>{row.inspection_type ?? "—"}</TableCell>
                 <TableCell>{row.result ?? "—"}</TableCell>
                 <TableCell>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/inspections/${row.id}/edit`}>수정</Link>
-                  </Button>
+                  <AdminListActions
+                    viewHref={`/admin/inspections/${row.id}`}
+                    editHref={`/admin/inspections/${row.id}/edit`}
+                  />
                 </TableCell>
               </TableRow>
             ))}

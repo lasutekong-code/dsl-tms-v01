@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { AdminEntityLink } from "@/components/admin/admin-entity-link";
+import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -77,16 +79,16 @@ export default async function AdminAssignmentsPage({ searchParams }: PageProps) 
               <TableHead>종료일</TableHead>
               <TableHead>현재</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-28" />
+              <TableHead className="w-36" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <Link href={`/vehicles/${row.vehicle_id}`} className="text-blue-600 hover:underline">
+                  <AdminEntityLink href={`/admin/assignments/${row.id}`}>
                     {vehicleById.get(row.vehicle_id) ?? "—"}
-                  </Link>
+                  </AdminEntityLink>
                 </TableCell>
                 <TableCell>{driverById.get(row.driver_id) ?? "—"}</TableCell>
                 <TableCell>{clientById.get(row.client_id) ?? "—"}</TableCell>
@@ -99,9 +101,10 @@ export default async function AdminAssignmentsPage({ searchParams }: PageProps) 
                 </TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>
                 <TableCell>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/assignments/${row.id}/edit`}>수정</Link>
-                  </Button>
+                  <AdminListActions
+                    viewHref={`/admin/assignments/${row.id}`}
+                    editHref={`/admin/assignments/${row.id}/edit`}
+                  />
                 </TableCell>
               </TableRow>
             ))}

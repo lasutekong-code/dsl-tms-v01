@@ -37,7 +37,7 @@ export function DriverPhotoThumb({
   const initials = driverName.trim().slice(0, 1) || "?";
 
   return (
-    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-slate-50">
+    <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
       {url ? (
         <Image src={url} alt={`${driverName} 사진`} fill className="object-cover" unoptimized />
       ) : (

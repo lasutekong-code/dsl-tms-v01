@@ -29,7 +29,7 @@ export function AdminRecordMeta({
   targetTable: string;
   targetId: string;
 }) {
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [loginId, setLoginId] = useState<string | null>(null);
   const [history, setHistory] = useState<HistoryRow[]>([]);
   const [open, setOpen] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
@@ -42,9 +42,9 @@ export function AdminRecordMeta({
         return;
       }
 
-      const json = (await res.json()) as { data?: { profileId?: string } };
-      if (json.data?.profileId) {
-        setCurrentUserId(json.data.profileId);
+      const json = (await res.json()) as { data?: { loginId?: string } };
+      if (json.data?.loginId) {
+        setLoginId(json.data.loginId);
       }
     })();
 
@@ -71,7 +71,7 @@ export function AdminRecordMeta({
   return (
     <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
       <span>수정일: {updatedAt ? formatDateKo(updatedAt) : "-"}</span>
-      <span>수정자 ID: {currentUserId ?? "-"}</span>
+      <span>로그인 ID: {loginId ?? "-"}</span>
       <Dialog
         open={open}
         onOpenChange={(next) => {
@@ -94,7 +94,7 @@ export function AdminRecordMeta({
               <TableRow>
                 <TableHead>일시</TableHead>
                 <TableHead>작업</TableHead>
-                <TableHead>수정자 ID</TableHead>
+                <TableHead>로그인 ID</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
