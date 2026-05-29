@@ -13,7 +13,7 @@ export function AdminListActions({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-end gap-1">
-      <Button asChild size="sm" variant="default">
+      <Button asChild size="sm" variant="view">
         <Link href={viewHref}>조회</Link>
       </Button>
       <Button asChild size="sm" variant="outline">
