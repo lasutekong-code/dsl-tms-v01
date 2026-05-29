@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
-import { removeAdminStorageObject, uploadAdminStorageObject } from "@/lib/admin/storage-upload";
+import { deleteContractFile, getUploadFileFromForm, uploadContractFile } from "@/lib/admin/contract-file";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
 export const dynamic = "force-dynamic";
-
-const BUCKET = "contract-files";
-const ALLOWED_EXTENSIONS = new Set(["pdf", "docx", "hwpx", "txt"]);
+export const runtime = "nodejs";
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const gate = await getAdminOrResponse();
@@ -22,61 +19,33 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ error: "잘못된 ID입니다." }, { status: 400 });
   }
 
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.includes("multipart/form-data")) {
+    return NextResponse.json({ error: "파일 업로드는 multipart 형식이어야 합니다." }, { status: 400 });
+  }
+
   let form: FormData;
   try {
     form = await request.formData();
   } catch {
-    return NextResponse.json({ error: "multipart 폼이 필요합니다." }, { status: 400 });
+    return NextResponse.json(
+      { error: "계약서 파일을 읽을 수 없습니다. 파일을 다시 선택한 뒤 저장해 주세요." },
+      { status: 400 },
+    );
   }
 
-  const file = form.get("file");
-  if (!(file instanceof File)) {
+  const file = getUploadFileFromForm(form);
+  if (!file) {
     return NextResponse.json({ error: "파일을 선택해 주세요." }, { status: 400 });
   }
 
-  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-  if (!ALLOWED_EXTENSIONS.has(ext)) {
-    return NextResponse.json({ error: "pdf, docx, hwpx, txt 파일만 업로드할 수 있습니다." }, { status: 400 });
-  }
-
   const supabase = await createClient();
-  const path = `${id}/${Date.now()}-${file.name}`;
-  const { error: uploadError } = await uploadAdminStorageObject(
-    BUCKET,
-    path,
-    Buffer.from(await file.arrayBuffer()),
-    file.type || "application/octet-stream",
-  );
-  if (uploadError) {
-    return NextResponse.json({ error: "파일 업로드에 실패했습니다." }, { status: 500 });
+  const result = await uploadContractFile(supabase, id, file, gate.admin);
+  if ("error" in result && result.error) {
+    return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
-  const { data, error } = await supabase
-    .from("contracts")
-    .update({
-      contract_file_bucket: BUCKET,
-      contract_file_path: path,
-      contract_file_name: file.name,
-      contract_file_mime: file.type || null,
-    })
-    .eq("id", id)
-    .select("*")
-    .maybeSingle();
-  if (error || !data) {
-    return NextResponse.json({ error: "파일 정보 저장에 실패했습니다." }, { status: 500 });
-  }
-
-  await insertAuditLog(supabase, {
-    profileId: gate.admin.profileId,
-    userId: gate.admin.userId,
-    action: "contract.file.upload",
-    targetTable: "contracts",
-    targetId: id,
-    vehicleId: data.vehicle_id,
-    metadata: { file_name: file.name },
-  });
-
-  return NextResponse.json({ data });
+  return NextResponse.json({ data: result.data });
 }
 
 export async function DELETE(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -91,44 +60,10 @@ export async function DELETE(_request: NextRequest, context: { params: Promise<{
   }
 
   const supabase = await createClient();
-  const { data: existing } = await supabase
-    .from("contracts")
-    .select("id, vehicle_id, contract_file_bucket, contract_file_path")
-    .eq("id", id)
-    .maybeSingle();
-
-  if (!existing) {
-    return NextResponse.json({ error: "계약을 찾을 수 없습니다." }, { status: 404 });
+  const result = await deleteContractFile(supabase, id, gate.admin);
+  if ("error" in result && result.error) {
+    return NextResponse.json({ error: result.error }, { status: result.status ?? 500 });
   }
 
-  if (existing.contract_file_bucket && existing.contract_file_path) {
-    await removeAdminStorageObject(existing.contract_file_bucket, existing.contract_file_path);
-  }
-
-  const { data, error } = await supabase
-    .from("contracts")
-    .update({
-      contract_file_bucket: null,
-      contract_file_path: null,
-      contract_file_name: null,
-      contract_file_mime: null,
-    })
-    .eq("id", id)
-    .select("*")
-    .maybeSingle();
-
-  if (error || !data) {
-    return NextResponse.json({ error: "첨부파일 삭제에 실패했습니다." }, { status: 500 });
-  }
-
-  await insertAuditLog(supabase, {
-    profileId: gate.admin.profileId,
-    userId: gate.admin.userId,
-    action: "contract.file.delete",
-    targetTable: "contracts",
-    targetId: id,
-    vehicleId: data.vehicle_id,
-  });
-
-  return NextResponse.json({ data });
+  return NextResponse.json({ data: result.data });
 }

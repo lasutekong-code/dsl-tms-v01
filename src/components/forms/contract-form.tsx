@@ -90,33 +90,26 @@ export function ContractForm({
       };
 
       const url = mode === "create" ? "/api/admin/contracts" : `/api/admin/contracts/${defaultValues?.id}`;
-      const res = await fetch(url, {
-        method: mode === "create" ? "POST" : "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const method = mode === "create" ? "POST" : "PATCH";
+
+      let res: Response;
+      if (contractFile) {
+        const multipart = new FormData();
+        multipart.set("payload", JSON.stringify(body));
+        multipart.set("file", contractFile, contractFile.name);
+        res = await fetch(url, { method, body: multipart });
+      } else {
+        res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
+
       const json: unknown = await res.json().catch(() => null);
       if (!res.ok) {
         toast.error(parseApiError(json));
         return;
-      }
-      const savedContractId =
-        json && typeof json === "object" && "data" in json && (json as { data?: { id?: string } }).data?.id
-          ? String((json as { data: { id: string } }).data.id)
-          : String(defaultValues?.id ?? "");
-
-      if (contractFile && savedContractId) {
-        const fileForm = new FormData();
-        fileForm.set("file", contractFile);
-        const uploadRes = await fetch(`/api/admin/contracts/${savedContractId}/file`, {
-          method: "POST",
-          body: fileForm,
-        });
-        const uploadJson: unknown = await uploadRes.json().catch(() => null);
-        if (!uploadRes.ok) {
-          toast.error(parseApiError(uploadJson));
-          return;
-        }
       }
 
       toast.success(mode === "create" ? "계약이 등록되었습니다." : "저장되었습니다.");
