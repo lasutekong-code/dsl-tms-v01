@@ -13,14 +13,13 @@ export function ResetPasswordForm() {
   const router = useRouter();
   const supabaseConfigured = isSupabaseConfigured();
   const [pending, setPending] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
+  const [checkingSession, setCheckingSession] = useState(() => supabaseConfigured);
   const [hasSession, setHasSession] = useState(false);
   const [password, setPassword] = useState("");
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
   useEffect(() => {
     if (!supabaseConfigured) {
-      setCheckingSession(false);
       return;
     }
 
