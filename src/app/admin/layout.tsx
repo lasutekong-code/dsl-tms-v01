@@ -6,6 +6,8 @@ import { requireAdmin } from "@/lib/auth/require-admin";
 import { createClient } from "@/lib/supabase/server";
 import { mapProfileRow } from "@/lib/auth/map-profile-row";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const admin = await requireAdmin();
 

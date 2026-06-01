@@ -2,6 +2,8 @@ import { VehicleDetailPage } from "@/components/vehicle/vehicle-detail-page";
 import { AppShell } from "@/components/layout/app-shell";
 import { requireProfile } from "@/lib/auth/get-profile";
 
+export const dynamic = "force-dynamic";
+
 type PageProps = {
   params: Promise<{ id: string }>;
 };

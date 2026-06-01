@@ -4,6 +4,8 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Card, CardContent } from "@/components/ui/card";
 import { requireProfile, roleLabels } from "@/lib/auth/get-profile";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const profile = await requireProfile();
   const isAdmin = profile.role === "admin";
