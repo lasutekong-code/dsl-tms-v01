@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
 import { FieldGrid, FieldFull } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
@@ -124,6 +125,9 @@ export function ClientContactForm({
   return (
     <div className="space-y-6">
       <AdminPageHeader title={mode === "create" ? "담당자 등록" : "담당자 수정"} description="거래처·센터별 담당자 정보를 입력합니다." />
+      {mode === "edit" && defaultValues?.id ? (
+        <AdminRecordMeta updatedAt={defaultValues.updated_at} targetTable="client_contacts" targetId={defaultValues.id} />
+      ) : null}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AdminSectionCard title="담당자 정보" sectionId="sec-contact-main">
           <FieldGrid>

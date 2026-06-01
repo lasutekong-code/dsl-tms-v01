@@ -8,8 +8,12 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
+import { DateYmdInput } from "@/components/admin/date-ymd-input";
+import { FilePickerButton } from "@/components/admin/file-picker-button";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
+import { Button } from "@/components/ui/button";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +25,7 @@ const formSchema = z.object({
   vehicle_id: z.string().uuid(),
   owner_id: z.string().uuid(),
   client_id: z.string().uuid(),
-  contract_type: z.enum(["consignment", "service"]),
+  contract_type: z.enum(["consignment", "vehicle_service", "shipper_cargo"]),
   contract_start_date: z.string().min(1),
   contract_end_date: z.string().optional(),
   status: z.enum(["active", "terminated", "expired"]),
@@ -53,13 +57,17 @@ export function ContractForm({
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [contractFile, setContractFile] = useState<File | null>(null);
+  const [deletingFile, setDeletingFile] = useState(false);
+  const hasExistingFile = Boolean(defaultValues?.contract_file_path);
   const form = useForm<ContractFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       vehicle_id: defaultValues?.vehicle_id ?? "",
       owner_id: defaultValues?.owner_id ?? "",
       client_id: defaultValues?.client_id ?? "",
-      contract_type: (defaultValues?.contract_type as "consignment" | "service") ?? "consignment",
+      contract_type:
+        (defaultValues?.contract_type as "consignment" | "vehicle_service" | "shipper_cargo") ?? "consignment",
       contract_start_date: defaultValues?.contract_start_date?.slice(0, 10) ?? "",
       contract_end_date: defaultValues?.contract_end_date?.slice(0, 10) ?? "",
       status: (defaultValues?.status as "active" | "terminated" | "expired") ?? "active",
@@ -82,11 +90,22 @@ export function ContractForm({
       };
 
       const url = mode === "create" ? "/api/admin/contracts" : `/api/admin/contracts/${defaultValues?.id}`;
-      const res = await fetch(url, {
-        method: mode === "create" ? "POST" : "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const method = mode === "create" ? "POST" : "PATCH";
+
+      let res: Response;
+      if (contractFile) {
+        const multipart = new FormData();
+        multipart.set("payload", JSON.stringify(body));
+        multipart.set("file", contractFile, contractFile.name);
+        res = await fetch(url, { method, body: multipart });
+      } else {
+        res = await fetch(url, {
+          method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
+
       const json: unknown = await res.json().catch(() => null);
       if (!res.ok) {
         toast.error(parseApiError(json));
@@ -131,6 +150,9 @@ export function ContractForm({
   return (
     <div className="space-y-6">
       <AdminPageHeader title={mode === "create" ? "계약 등록" : "계약 수정"} description="차량·사업주·거래처 간 계약 정보를 입력합니다." />
+      {mode === "edit" && defaultValues?.id ? (
+        <AdminRecordMeta updatedAt={defaultValues.updated_at} targetTable="contracts" targetId={defaultValues.id} />
+      ) : null}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AdminSectionCard title="계약 정보" sectionId="sec-contract">
           <FieldGrid>
@@ -173,14 +195,20 @@ export function ContractForm({
                 )}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="contract_start_date">시작일 *</Label>
-              <Input id="contract_start_date" type="date" {...form.register("contract_start_date")} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="contract_end_date">종료일</Label>
-              <Input id="contract_end_date" type="date" {...form.register("contract_end_date")} />
-            </div>
+            <Controller
+              control={form.control}
+              name="contract_start_date"
+              render={({ field }) => (
+                <DateYmdInput id="contract_start_date" label="시작일 *" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="contract_end_date"
+              render={({ field }) => (
+                <DateYmdInput id="contract_end_date" label="종료일" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
             <div className="space-y-2">
               <Label>상태</Label>
               <Controller
@@ -205,6 +233,45 @@ export function ContractForm({
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="memo">메모</Label>
               <Input id="memo" {...form.register("memo")} />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>계약서 파일 (pdf, docx, hwpx, txt)</Label>
+              <div className="flex flex-wrap items-center gap-3">
+                <FilePickerButton
+                  accept=".pdf,.docx,.hwpx,.txt"
+                  onFileChange={setContractFile}
+                  inputId="contract_file"
+                />
+                {hasExistingFile && mode === "edit" && defaultValues?.id ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={deletingFile}
+                    onClick={async () => {
+                      setDeletingFile(true);
+                      try {
+                        const res = await fetch(`/api/admin/contracts/${defaultValues.id}/file`, { method: "DELETE" });
+                        const json: unknown = await res.json().catch(() => null);
+                        if (!res.ok) {
+                          toast.error(parseApiError(json));
+                          return;
+                        }
+
+                        toast.success("첨부파일이 삭제되었습니다.");
+                        router.refresh();
+                      } finally {
+                        setDeletingFile(false);
+                      }
+                    }}
+                  >
+                    첨부파일 삭제
+                  </Button>
+                ) : null}
+              </div>
+              {defaultValues?.contract_file_name ? (
+                <p className="text-sm text-slate-600">현재 파일: {defaultValues.contract_file_name}</p>
+              ) : null}
+              {contractFile ? <p className="text-sm text-slate-600">선택됨: {contractFile.name}</p> : null}
             </div>
           </FieldGrid>
         </AdminSectionCard>

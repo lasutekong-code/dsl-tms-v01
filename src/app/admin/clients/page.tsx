@@ -1,5 +1,8 @@
 import Link from "next/link";
 
+import { AdminRegisterButton } from "@/components/admin/admin-register-button";
+import { AdminEntityLink } from "@/components/admin/admin-entity-link";
+import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
@@ -48,9 +51,7 @@ export default async function AdminClientsListPage({ searchParams }: PageProps) 
         toolbar={
           <>
             <AdminSearchBar defaultValue={q} />
-            <Button asChild>
-              <Link href="/admin/clients/new">등록</Link>
-            </Button>
+            <AdminRegisterButton href="/admin/clients/new" />
           </>
         }
       >
@@ -62,13 +63,15 @@ export default async function AdminClientsListPage({ searchParams }: PageProps) 
               <TableHead>대표전화</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-28" />
+              <TableHead className="w-36" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.client_name}</TableCell>
+                <TableCell>
+                  <AdminEntityLink href={`/admin/clients/${row.id}`}>{row.client_name}</AdminEntityLink>
+                </TableCell>
                 <TableCell>{row.business_no ?? "—"}</TableCell>
                 <TableCell>{row.main_phone ?? "—"}</TableCell>
                 <TableCell>
@@ -76,9 +79,7 @@ export default async function AdminClientsListPage({ searchParams }: PageProps) 
                 </TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>
                 <TableCell>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/clients/${row.id}/edit`}>수정</Link>
-                  </Button>
+                  <AdminListActions viewHref={`/admin/clients/${row.id}`} editHref={`/admin/clients/${row.id}/edit`} />
                 </TableCell>
               </TableRow>
             ))}

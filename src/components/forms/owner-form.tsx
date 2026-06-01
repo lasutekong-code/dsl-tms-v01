@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
+import { DateYmdInput } from "@/components/admin/date-ymd-input";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
@@ -146,6 +148,9 @@ export function OwnerForm({ mode, defaultValues }: { mode: "create" | "edit"; de
   return (
     <div className="space-y-6">
       <AdminPageHeader title={mode === "create" ? "사업주 등록" : "사업주 수정"} description="사업주 및 과세·수수료 정보를 입력합니다." />
+      {mode === "edit" && defaultValues?.id ? (
+        <AdminRecordMeta updatedAt={defaultValues.updated_at} targetTable="owners" targetId={defaultValues.id} />
+      ) : null}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AdminSectionCard title="기본 정보" sectionId="sec-owner-basic">
           <FieldGrid>
@@ -174,16 +179,27 @@ export function OwnerForm({ mode, defaultValues }: { mode: "create" | "edit"; de
                 <p className="text-sm text-red-600">{form.formState.errors.business_no.message}</p>
               ) : null}
             </div>
+            <Controller
+              control={form.control}
+              name="business_start_date"
+              render={({ field }) => (
+                <DateYmdInput id="business_start_date" label="사업 시작일" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="business_closed_date"
+              render={({ field }) => (
+                <DateYmdInput
+                  id="business_closed_date"
+                  label="사업 종료일"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                />
+              )}
+            />
             <div className="space-y-2">
-              <Label htmlFor="business_start_date">사업 시작일</Label>
-              <Input id="business_start_date" type="date" {...form.register("business_start_date")} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="business_closed_date">사업 종료일</Label>
-              <Input id="business_closed_date" type="date" {...form.register("business_closed_date")} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="service_fee_send_method">수수료 전달 방식</Label>
+              <Label htmlFor="service_fee_send_method">안내문 발송 방식(문자/카톡/우편)</Label>
               <Input id="service_fee_send_method" {...form.register("service_fee_send_method")} />
             </div>
             <div className="space-y-2">

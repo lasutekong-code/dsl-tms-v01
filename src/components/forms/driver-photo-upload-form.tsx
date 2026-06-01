@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { FilePickerButton } from "@/components/admin/file-picker-button";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Label } from "@/components/ui/label";
@@ -13,18 +14,22 @@ import { validatePhotoFile } from "@/lib/admin/photo-file";
 
 export function DriverPhotoUploadForm({
   driverId,
+  driverName,
   existingPath,
 }: {
   driverId: string;
+  driverName: string;
   existingPath: string | null;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  async function onUpload(formData: FormData) {
-    const file = formData.get("file");
-    if (!(file instanceof File)) {
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const file = selectedFile;
+    if (!file || file.size === 0) {
       toast.error("파일을 선택해 주세요.");
       return;
     }
@@ -53,6 +58,7 @@ export function DriverPhotoUploadForm({
 
       toast.success("프로필 사진이 저장되었습니다.");
       setPreview(null);
+      setSelectedFile(null);
       router.refresh();
     } finally {
       setPending(false);
@@ -61,25 +67,15 @@ export function DriverPhotoUploadForm({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="운전자 사진 업로드" description="프로필 사진 1장을 등록합니다." />
+      <AdminPageHeader title="운전자 사진 업로드" description={`업로드 대상 운전자: ${driverName}`} />
       <AdminSectionCard title="업로드" sectionId="sec-driver-photo">
-        <form
-          className="space-y-4"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            await onUpload(new FormData(e.currentTarget));
-          }}
-        >
+        <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-2">
-            <Label htmlFor="file">파일 (jpg/png/webp, 최대 5MB)</Label>
-            <input
-              id="file"
-              name="file"
-              type="file"
+            <Label>파일 (jpg/png/webp, 최대 5MB)</Label>
+            <FilePickerButton
               accept="image/jpeg,image/png,image/webp"
-              className="block w-full text-sm"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
+              onFileChange={(f) => {
+                setSelectedFile(f);
                 if (f) {
                   setPreview(URL.createObjectURL(f));
                 }

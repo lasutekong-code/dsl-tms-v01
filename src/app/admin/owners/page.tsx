@@ -1,11 +1,15 @@
 import Link from "next/link";
 
+import { AdminListActions } from "@/components/admin/admin-list-actions";
+import { AdminRegisterButton } from "@/components/admin/admin-register-button";
+import { AdminVehicleDetailLink } from "@/components/admin/admin-vehicle-detail-link";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
+import { decryptOwnerRow } from "@/lib/admin/pii-transform";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 20;
@@ -25,7 +29,18 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
     query = query.ilike("owner_name", `%${q}%`);
   }
 
-  const { data: rows, count, error } = await query;
+  const { data: rawRows, count, error } = await query;
+  const rows = (rawRows ?? []).map(decryptOwnerRow);
+  const ownerIds = rows.map((row) => row.id);
+  const { data: assignments } =
+    ownerIds.length > 0
+      ? await supabase
+          .from("vehicle_assignments")
+          .select("owner_id, vehicle_id")
+          .in("owner_id", ownerIds)
+          .eq("is_current", true)
+      : { data: [] as { owner_id: string; vehicle_id: string }[] };
+  const vehicleIdByOwner = new Map((assignments ?? []).map((row) => [row.owner_id, row.vehicle_id]));
 
   if (error) {
     return <p className="text-sm text-red-600">목록을 불러오지 못했습니다.</p>;
@@ -41,9 +56,7 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
         toolbar={
           <>
             <AdminSearchBar defaultValue={q} />
-            <Button asChild>
-              <Link href="/admin/owners/new">등록</Link>
-            </Button>
+            <AdminRegisterButton href="/admin/owners/new" />
           </>
         }
       >
@@ -55,13 +68,17 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
               <TableHead>사업자번호</TableHead>
               <TableHead>상태</TableHead>
               <TableHead>등록일</TableHead>
-              <TableHead className="w-28" />
+              <TableHead className="w-36" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
-                <TableCell className="font-medium">{row.owner_name}</TableCell>
+                <TableCell>
+                  <AdminVehicleDetailLink vehicleId={vehicleIdByOwner.get(row.id)}>
+                    {row.owner_name}
+                  </AdminVehicleDetailLink>
+                </TableCell>
                 <TableCell>{row.owner_phone ?? "—"}</TableCell>
                 <TableCell>{row.business_no ?? "—"}</TableCell>
                 <TableCell>
@@ -69,9 +86,7 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
                 </TableCell>
                 <TableCell className="text-slate-600">{formatDateKo(row.created_at ?? null)}</TableCell>
                 <TableCell>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/owners/${row.id}/edit`}>수정</Link>
-                  </Button>
+                  <AdminListActions viewHref={`/admin/owners/${row.id}`} editHref={`/admin/owners/${row.id}/edit`} />
                 </TableCell>
               </TableRow>
             ))}

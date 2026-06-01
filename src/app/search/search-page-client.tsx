@@ -41,9 +41,17 @@ export default function SearchPageClient() {
       return;
     }
 
-    const body = (await response.json()) as { results: VehicleSearchResult[] };
+    const body = (await response.json()) as { results: VehicleSearchResult[]; duplicateVehicleCount?: number };
     setResults(body.results);
-    setMessage(body.results.length > 0 ? `${body.results.length}건을 찾았습니다.` : "검색 결과가 없습니다.");
+    setMessage(
+      body.results.length > 0
+        ? `${body.results.length}건을 찾았습니다.${
+            body.duplicateVehicleCount && body.duplicateVehicleCount > 0
+              ? ` 중복 배정 차량 ${body.duplicateVehicleCount}대가 포함되어 있습니다.`
+              : ""
+          }`
+        : "검색 결과가 없습니다.",
+    );
     setIsLoading(false);
   }
 
@@ -80,8 +88,8 @@ export default function SearchPageClient() {
       </p>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {results.map((result) => (
-          <VehicleResultCard key={result.id} result={result} />
+        {results.map((result, index) => (
+          <VehicleResultCard key={result.rowKey ?? `${result.id}-${index}`} result={result} />
         ))}
       </div>
     </div>

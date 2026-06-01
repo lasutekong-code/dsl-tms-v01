@@ -49,6 +49,8 @@ const baseDetail: VehicleDetail = {
   consignment_contract_end_date: null,
   service_contract_date: null,
   service_contract_end_date: null,
+  shipper_cargo_contract_date: null,
+  shipper_cargo_contract_end_date: null,
   home_address: "서울시 강남구",
   mailing_address: "서울시 서초구",
   vehicle_photos: [

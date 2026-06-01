@@ -11,6 +11,7 @@ import {
   phoneSchema,
   requiredTrimmed,
 } from "@/lib/admin/zod-util";
+import { decryptDriverRow, encryptDriverWrite } from "@/lib/admin/pii-transform";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -22,6 +23,7 @@ const createSchema = z.object({
   phone: phoneSchema,
   driver_license_no: optionalNullableTrimmedString,
   cargo_license_no: optionalNullableTrimmedString,
+  resident_registration_number: optionalNullableTrimmedString,
   is_active: z.boolean().optional().default(true),
 });
 
@@ -44,17 +46,18 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const insertRow = {
+  const insertRow = encryptDriverWrite({
     profile_id: parsed.data.profile_id,
     driver_name: parsed.data.driver_name,
     birth_date: parsed.data.birth_date ?? null,
     phone: parsed.data.phone,
     driver_license_no: parsed.data.driver_license_no ?? null,
     cargo_license_no: parsed.data.cargo_license_no ?? null,
+    resident_registration_number: parsed.data.resident_registration_number ?? null,
     is_active: parsed.data.is_active ?? true,
-  };
+  });
 
-  const { data, error } = await supabase.from("drivers").insert(insertRow).select("*").single();
+  const { data, error } = await supabase.from("drivers").insert(insertRow as never).select("*").single();
 
   if (error || !data) {
     return NextResponse.json({ error: "저장 중 오류가 발생했습니다." }, { status: 500 });
@@ -69,5 +72,5 @@ export async function POST(request: NextRequest) {
     metadata: { driver_name: data.driver_name },
   });
 
-  return NextResponse.json({ data });
+  return NextResponse.json({ data: decryptDriverRow(data) });
 }

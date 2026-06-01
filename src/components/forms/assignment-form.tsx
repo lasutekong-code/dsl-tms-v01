@@ -8,6 +8,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
+import { DateYmdInput } from "@/components/admin/date-ymd-input";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
@@ -23,6 +25,8 @@ const formSchema = z.object({
   center_id: z.string().uuid(),
   driver_id: z.string().uuid(),
   owner_id: z.string().uuid(),
+  operation_time: z.string().min(1, "운행시간을 입력해 주세요."),
+  manager_name: z.string().optional(),
   start_date: z.string().min(1),
   end_date: z.string().optional(),
   is_current: z.boolean(),
@@ -49,7 +53,7 @@ export function AssignmentForm({
 }: {
   mode: "create" | "edit";
   defaultValues?: Partial<VehicleAssignmentRow> | null;
-  vehicles: { id: string; vehicle_no: string }[];
+  vehicles: { id: string; vehicle_no: string; special_equipment: string | null }[];
   clients: { id: string; client_name: string }[];
   centers: { id: string; center_name: string; client_id: string }[];
   drivers: { id: string; driver_name: string }[];
@@ -65,6 +69,8 @@ export function AssignmentForm({
       center_id: defaultValues?.center_id ?? "",
       driver_id: defaultValues?.driver_id ?? "",
       owner_id: defaultValues?.owner_id ?? "",
+      operation_time: defaultValues?.operation_time ?? "",
+      manager_name: defaultValues?.manager_name ?? "",
       start_date: defaultValues?.start_date?.slice(0, 10) ?? "",
       end_date: defaultValues?.end_date?.slice(0, 10) ?? "",
       is_current: defaultValues?.is_current ?? true,
@@ -113,6 +119,8 @@ export function AssignmentForm({
         center_id: values.center_id,
         driver_id: values.driver_id,
         owner_id: values.owner_id,
+        operation_time: values.operation_time.trim(),
+        manager_name: values.manager_name?.trim() ? values.manager_name.trim() : null,
         start_date: values.start_date,
         end_date: values.end_date?.trim() ? values.end_date : null,
         is_current: values.is_current,
@@ -141,13 +149,23 @@ export function AssignmentForm({
   return (
     <div className="space-y-6">
       <AdminPageHeader title={mode === "create" ? "차량 배정 등록" : "차량 배정 수정"} description="차량·거래처·센터·운전자·사업주를 연결합니다." />
+      {mode === "edit" && defaultValues?.id ? (
+        <AdminRecordMeta
+          updatedAt={defaultValues.updated_at}
+          targetTable="vehicle_assignments"
+          targetId={defaultValues.id}
+        />
+      ) : null}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <AdminSectionCard title="배정" sectionId="sec-assignment">
           <FieldGrid>
             {sel(
               "vehicle_id",
               "차량",
-              vehicles.map((v) => ({ id: v.id, label: v.vehicle_no })),
+              vehicles.map((v) => ({
+                id: v.id,
+                label: `${v.vehicle_no}${v.special_equipment ? ` · 특장:${v.special_equipment}` : ""}`,
+              })),
             )}
             {sel(
               "client_id",
@@ -188,13 +206,29 @@ export function AssignmentForm({
               owners.map((o) => ({ id: o.id, label: o.owner_name })),
             )}
             <div className="space-y-2">
-              <Label htmlFor="start_date">시작일 *</Label>
-              <Input id="start_date" type="date" {...form.register("start_date")} />
+              <Label htmlFor="operation_time">
+                운행시간 <span className="text-red-600">*</span>
+              </Label>
+              <Input id="operation_time" placeholder="예: 06:00-10:00" {...form.register("operation_time")} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="end_date">종료일</Label>
-              <Input id="end_date" type="date" {...form.register("end_date")} />
+              <Label htmlFor="manager_name">담당자명</Label>
+              <Input id="manager_name" {...form.register("manager_name")} />
             </div>
+            <Controller
+              control={form.control}
+              name="start_date"
+              render={({ field }) => (
+                <DateYmdInput id="start_date" label="시작일 *" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
+            <Controller
+              control={form.control}
+              name="end_date"
+              render={({ field }) => (
+                <DateYmdInput id="end_date" label="종료일" value={field.value ?? ""} onChange={field.onChange} />
+              )}
+            />
             <div className="flex items-center gap-2 pt-2 md:col-span-2">
               <Controller
                 control={form.control}

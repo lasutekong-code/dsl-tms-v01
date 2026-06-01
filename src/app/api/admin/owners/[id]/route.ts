@@ -14,8 +14,9 @@ import {
   phoneSchema,
   requiredTrimmed,
 } from "@/lib/admin/zod-util";
+import { decryptOwnerRow, encryptOwnerWrite } from "@/lib/admin/pii-transform";
+import { decryptPii } from "@/lib/crypto/pii";
 import { createClient } from "@/lib/supabase/server";
-import type { OwnerRow } from "@/types/database";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +40,7 @@ async function findDuplicateOwnerBusinessNo(
       continue;
     }
 
-    if (normalizeBusinessNo(row.business_no) === normalized) {
+    if (normalizeBusinessNo(decryptPii(row.business_no)) === normalized) {
       return "이미 등록된 사업자등록번호입니다.";
     }
   }
@@ -101,7 +102,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     patch.business_no = normalizedBn ? formatKoreanBusinessNo(normalizedBn) : null;
   }
 
-  const { data, error } = await supabase.from("owners").update(patch as Partial<OwnerRow>).eq("id", id).select("*").maybeSingle();
+  const encryptedPatch = encryptOwnerWrite(patch);
+  const { data, error } = await supabase.from("owners").update(encryptedPatch as never).eq("id", id).select("*").maybeSingle();
 
   if (error || !data) {
     return NextResponse.json({ error: "수정에 실패했습니다." }, { status: 500 });
@@ -116,5 +118,5 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     metadata: { owner_name: data.owner_name },
   });
 
-  return NextResponse.json({ data });
+  return NextResponse.json({ data: decryptOwnerRow(data) });
 }

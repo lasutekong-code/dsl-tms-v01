@@ -49,6 +49,7 @@ export type DriverRow = {
   phone: string | null;
   driver_license_no: string | null;
   cargo_license_no: string | null;
+  resident_registration_number?: string | null;
   is_active: boolean | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -102,6 +103,8 @@ export type VehicleAssignmentRow = {
   center_id: string;
   driver_id: string;
   owner_id: string;
+  operation_time: string;
+  manager_name: string | null;
   start_date: string;
   end_date: string | null;
   is_current: boolean | null;
@@ -114,6 +117,7 @@ export type InsuranceRow = {
   vehicle_id: string;
   insurance_company: string | null;
   insurance_rate: number | null;
+  insurance_rate_text: string | null;
   renewal_date: string | null;
   memo: string | null;
   created_at?: string | null;
@@ -125,6 +129,7 @@ export type VehicleInspectionRow = {
   vehicle_id: string;
   inspection_date: string;
   inspection_type: string | null;
+  inspection_station_name: string | null;
   result: string | null;
   memo: string | null;
   created_at?: string | null;
@@ -141,14 +146,20 @@ export type ContractRow = {
   contract_end_date: string | null;
   status: string;
   memo: string | null;
+  contract_file_bucket?: string | null;
+  contract_file_path?: string | null;
+  contract_file_name?: string | null;
+  contract_file_mime?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
 
 export type AddressRow = {
   id: string;
-  target_table: string;
-  target_id: string;
+  target_table?: string | null;
+  target_id?: string | null;
+  owner_id?: string | null;
+  driver_id?: string | null;
   address_type: string | null;
   zip_code: string | null;
   address1: string | null;
@@ -159,8 +170,11 @@ export type AddressRow = {
 
 export type MemoRow = {
   id: string;
-  target_table: string;
-  target_id: string;
+  target_table?: string | null;
+  target_id?: string | null;
+  vehicle_id?: string | null;
+  driver_id?: string | null;
+  created_by?: string | null;
   memo_type: string | null;
   content: string;
   visibility: string | null;
@@ -171,23 +185,40 @@ export type MemoRow = {
 export type VehiclePhotoRow = {
   id: string;
   vehicle_id: string;
-  photo_type: string | null;
-  bucket: string | null;
+  photo_type: string;
   storage_path: string;
+  uploaded_by?: string | null;
   created_at?: string | null;
 };
 
 export type DriverPhotoRow = {
   id: string;
   driver_id: string;
-  bucket: string | null;
   storage_path: string;
+  uploaded_by?: string | null;
   created_at?: string | null;
+};
+
+export type AdminDashboardSettingsRow = {
+  id: string;
+  quick_guide: string;
+  photo_guide: string;
+  updated_at?: string | null;
+  updated_by?: string | null;
 };
 
 export type Database = {
   public: {
     Tables: {
+      admin_dashboard_settings: {
+        Row: AdminDashboardSettingsRow;
+        Insert: Omit<AdminDashboardSettingsRow, "updated_at" | "updated_by"> & {
+          updated_at?: string | null;
+          updated_by?: string | null;
+        };
+        Update: Partial<AdminDashboardSettingsRow>;
+        Relationships: [];
+      };
       profiles: {
         Row: ProfileRow;
         Insert: Partial<ProfileRow> & { id: string };

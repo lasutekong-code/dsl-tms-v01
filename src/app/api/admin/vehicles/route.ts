@@ -48,6 +48,11 @@ const createSchema = z.object({
     (v) => (v === "" || v === null || v === undefined ? null : v),
     z.coerce.number().finite().nonnegative().nullable().optional(),
   ),
+  special_equipment: optionalNullableTrimmedString,
+  height_mm: nonNegativeIntOptional,
+  length_mm: nonNegativeIntOptional,
+  width_mm: nonNegativeIntOptional,
+  max_load_kg: nonNegativeIntOptional,
   status: z.enum(VEHICLE_STATUSES).optional().default("active"),
 });
 
@@ -71,9 +76,6 @@ export async function POST(request: NextRequest) {
 
   const supabase = await createClient();
   const dupMsg = await findDuplicateVehicleNo(supabase, parsed.data.vehicle_no);
-  if (dupMsg) {
-    return NextResponse.json({ error: dupMsg, fields: { vehicle_no: [dupMsg] } }, { status: 409 });
-  }
 
   const insertRow = {
     vehicle_no: parsed.data.vehicle_no.trim(),
@@ -92,6 +94,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "저장 중 오류가 발생했습니다." }, { status: 500 });
   }
 
+  await supabase.from("vehicle_specs").upsert(
+    {
+      vehicle_id: data.id,
+      special_equipment: parsed.data.special_equipment ?? null,
+      height_mm: parsed.data.height_mm ?? null,
+      length_mm: parsed.data.length_mm ?? null,
+      width_mm: parsed.data.width_mm ?? null,
+      max_load_kg: parsed.data.max_load_kg ?? null,
+    },
+    { onConflict: "vehicle_id" },
+  );
+
   await insertAuditLog(supabase, {
     profileId: gate.admin.profileId,
     userId: gate.admin.userId,
@@ -102,5 +116,8 @@ export async function POST(request: NextRequest) {
     metadata: { vehicle_no: data.vehicle_no },
   });
 
-  return NextResponse.json({ data });
+  return NextResponse.json({
+    data,
+    warning: dupMsg ?? null,
+  });
 }

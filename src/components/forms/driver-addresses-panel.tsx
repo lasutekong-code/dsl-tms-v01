@@ -39,6 +39,12 @@ function AddressBlock({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const hasContent = [zipCode, address1, address2].some((v) => v.trim().length > 0);
+    if (!hasContent) {
+      toast.error("주소 내용을 입력해주세요");
+      return;
+    }
+
     setPending(true);
     try {
       const res = await fetch("/api/admin/addresses", {

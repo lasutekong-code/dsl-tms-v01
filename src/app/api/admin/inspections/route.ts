@@ -12,6 +12,7 @@ const createSchema = z.object({
   vehicle_id: uuidString,
   inspection_date: dateYmdSchema,
   inspection_type: optionalNullableTrimmedString,
+  inspection_station_name: optionalNullableTrimmedString,
   result: optionalNullableTrimmedString,
   memo: optionalNullableTrimmedString,
 });
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
     vehicle_id: parsed.data.vehicle_id,
     inspection_date: parsed.data.inspection_date,
     inspection_type: parsed.data.inspection_type ?? null,
+    inspection_station_name: parsed.data.inspection_station_name ?? null,
     result: parsed.data.result ?? null,
     memo: parsed.data.memo ?? null,
   };

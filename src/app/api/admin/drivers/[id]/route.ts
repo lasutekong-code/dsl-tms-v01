@@ -11,6 +11,7 @@ import {
   phoneSchema,
   requiredTrimmed,
 } from "@/lib/admin/zod-util";
+import { decryptDriverRow, encryptDriverWrite } from "@/lib/admin/pii-transform";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
@@ -23,6 +24,7 @@ const updateSchema = z.object({
   phone: phoneSchema.optional(),
   driver_license_no: optionalNullableTrimmedString,
   cargo_license_no: optionalNullableTrimmedString,
+  resident_registration_number: optionalNullableTrimmedString,
   is_active: z.boolean().optional(),
 });
 
@@ -56,7 +58,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("drivers").update(parsed.data).eq("id", id).select("*").maybeSingle();
+  const patch = encryptDriverWrite(parsed.data);
+  const { data, error } = await supabase.from("drivers").update(patch as never).eq("id", id).select("*").maybeSingle();
 
   if (error || !data) {
     return NextResponse.json({ error: "수정에 실패했습니다." }, { status: 500 });
@@ -71,5 +74,5 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     metadata: { driver_name: data.driver_name },
   });
 
-  return NextResponse.json({ data });
+  return NextResponse.json({ data: decryptDriverRow(data) });
 }

@@ -46,6 +46,10 @@ For password reset emails, add your app origin in **Authentication → URL Confi
 - `https://<your-domain>/auth/callback`
 - `https://<your-domain>/login/reset-password`
 
+## Database migrations
+
+SQL migrations live in `supabase/migrations/`. New tables must include explicit **Data API** grants — see [supabase/README.md](./supabase/README.md).
+
 ## Scripts
 
 - `npm run dev` — development server

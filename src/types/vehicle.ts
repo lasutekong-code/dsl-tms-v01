@@ -87,6 +87,8 @@ export type VehicleDetail = {
   consignment_contract_end_date: string | null;
   service_contract_date: string | null;
   service_contract_end_date: string | null;
+  shipper_cargo_contract_date: string | null;
+  shipper_cargo_contract_end_date: string | null;
   home_address: string | null;
   mailing_address: string | null;
   vehicle_photos: VehiclePhoto[];

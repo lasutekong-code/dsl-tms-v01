@@ -2,7 +2,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export type AdminSession =
-  | { ok: true; userId: string; profileId: string }
+  | { ok: true; userId: string; profileId: string; loginId: string }
   | { ok: false; reason: "unauthenticated" | "forbidden" };
 
 /**
@@ -25,7 +25,7 @@ export async function requireAdmin(): Promise<AdminSession> {
 
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, role, is_active")
+    .select("id, role, is_active, email")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -33,5 +33,7 @@ export async function requireAdmin(): Promise<AdminSession> {
     return { ok: false, reason: "forbidden" };
   }
 
-  return { ok: true, userId: user.id, profileId: profile.id };
+  const loginId = profile.email?.trim() || user.email?.trim() || user.id;
+
+  return { ok: true, userId: user.id, profileId: profile.id, loginId };
 }

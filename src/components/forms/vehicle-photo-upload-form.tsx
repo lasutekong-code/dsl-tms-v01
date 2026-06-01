@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { FilePickerButton } from "@/components/admin/file-picker-button";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
 import { Label } from "@/components/ui/label";
@@ -15,19 +16,23 @@ import { VEHICLE_PHOTO_TYPES } from "@/types/admin";
 
 export function VehiclePhotoUploadForm({
   vehicleId,
+  vehicleNo,
   existing,
 }: {
   vehicleId: string;
-  existing: { photo_type: string | null; storage_path: string; bucket: string | null }[];
+  vehicleNo: string;
+  existing: { photo_type: string | null; storage_path: string }[];
 }) {
   const router = useRouter();
   const [photoType, setPhotoType] = useState<string>("front");
   const [pending, setPending] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  async function onUpload(formData: FormData) {
-    const file = formData.get("file");
-    if (!(file instanceof File)) {
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const file = selectedFile;
+    if (!file || file.size === 0) {
       toast.error("파일을 선택해 주세요.");
       return;
     }
@@ -57,6 +62,7 @@ export function VehiclePhotoUploadForm({
 
       toast.success("사진이 저장되었습니다.");
       setPreview(null);
+      setSelectedFile(null);
       router.refresh();
     } finally {
       setPending(false);
@@ -65,15 +71,9 @@ export function VehiclePhotoUploadForm({
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="차량 사진 업로드" description="전면·후면·측면 사진을 각 1장씩 등록할 수 있습니다." />
+      <AdminPageHeader title="차량 사진 업로드" description={`업로드 대상 차량번호: ${vehicleNo}`} />
       <AdminSectionCard title="업로드" sectionId="sec-vehicle-photo">
-        <form
-          className="space-y-4"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            await onUpload(new FormData(e.currentTarget));
-          }}
-        >
+        <form className="space-y-4" onSubmit={onSubmit}>
           <div className="space-y-2">
             <Label>사진 종류</Label>
             <Select value={photoType} onValueChange={setPhotoType}>
@@ -90,15 +90,11 @@ export function VehiclePhotoUploadForm({
             </Select>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="file">파일 (jpg/png/webp, 최대 5MB)</Label>
-            <input
-              id="file"
-              name="file"
-              type="file"
+            <Label>파일 (jpg/png/webp, 최대 5MB)</Label>
+            <FilePickerButton
               accept="image/jpeg,image/png,image/webp"
-              className="block w-full text-sm"
-              onChange={(e) => {
-                const f = e.target.files?.[0];
+              onFileChange={(f) => {
+                setSelectedFile(f);
                 if (f) {
                   setPreview(URL.createObjectURL(f));
                 }

@@ -6,7 +6,6 @@ import { getAdminOrResponse, omitUndefined } from "@/lib/admin/api-guard";
 import {
   dateYmdOptionalSchema,
   flattenZodErrors,
-  nonNegativeFloatOptional,
   optionalNullableTrimmedString,
   uuidString,
 } from "@/lib/admin/zod-util";
@@ -19,7 +18,7 @@ export const dynamic = "force-dynamic";
 const updateSchema = z.object({
   vehicle_id: uuidString.optional(),
   insurance_company: optionalNullableTrimmedString,
-  insurance_rate: nonNegativeFloatOptional.optional(),
+  insurance_rate_text: optionalNullableTrimmedString,
   renewal_date: dateYmdOptionalSchema.optional(),
   memo: optionalNullableTrimmedString,
 });

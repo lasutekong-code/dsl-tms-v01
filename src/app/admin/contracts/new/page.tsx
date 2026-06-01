@@ -1,4 +1,5 @@
 import { ContractForm } from "@/components/forms/contract-form";
+import { decryptPii } from "@/lib/crypto/pii";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminContractsNewPage() {
@@ -10,6 +11,11 @@ export default async function AdminContractsNewPage() {
   ]);
 
   return (
-    <ContractForm mode="create" vehicles={vehicles ?? []} owners={owners ?? []} clients={clients ?? []} />
+    <ContractForm
+      mode="create"
+      vehicles={vehicles ?? []}
+      owners={(owners ?? []).map((o) => ({ id: o.id, owner_name: decryptPii(o.owner_name) ?? o.owner_name ?? "" }))}
+      clients={clients ?? []}
+    />
   );
 }
