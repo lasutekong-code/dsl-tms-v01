@@ -40,7 +40,6 @@ export function AdminSidebar({ profile, pathname }: { profile: Profile; pathname
               <Link
                 key={item.href}
                 href={item.href}
-                prefetch={false}
                 className={cn(
                   "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                   active ? "bg-blue-50 text-blue-800" : "text-slate-700 hover:bg-slate-50",
@@ -70,7 +69,6 @@ export function AdminMobileNav({ pathname }: { pathname: string }) {
           <Link
             key={item.href}
             href={item.href}
-            prefetch={false}
             className={cn(
               "whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium",
               active ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-700",
