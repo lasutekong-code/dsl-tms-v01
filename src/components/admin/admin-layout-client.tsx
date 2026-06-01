@@ -21,9 +21,14 @@ export function AdminLayoutClient({ profile, children }: PropsWithChildren<{ pro
             <Link href="/search" prefetch={false} className="hover:text-blue-600">
               차량 검색
             </Link>
-            <Link href="/auth/logout" className="rounded-md border border-slate-200 px-3 py-1 text-xs hover:bg-slate-50">
-              로그아웃
-            </Link>
+            <form action="/auth/logout" method="post">
+              <button
+                type="submit"
+                className="rounded-md border border-slate-200 px-3 py-1 text-xs hover:bg-slate-50"
+              >
+                로그아웃
+              </button>
+            </form>
           </nav>
         </div>
       </header>

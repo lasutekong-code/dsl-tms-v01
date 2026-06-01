@@ -23,9 +23,14 @@ export function AppShell({ children, profile }: PropsWithChildren<{ profile: Pro
             <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
               {roleLabels[profile.role as keyof typeof roleLabels] ?? profile.role}
             </span>
-            <Link href="/auth/logout" className="rounded-md border border-slate-200 px-3 py-1 text-xs hover:bg-slate-50">
-              로그아웃
-            </Link>
+            <form action="/auth/logout" method="post">
+              <button
+                type="submit"
+                className="rounded-md border border-slate-200 px-3 py-1 text-xs hover:bg-slate-50"
+              >
+                로그아웃
+              </button>
+            </form>
           </nav>
         </div>
       </header>
