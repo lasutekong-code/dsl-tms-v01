@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { AdminDashboardEditor } from "@/components/admin/admin-dashboard-editor";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { createClient } from "@/lib/supabase/server";
