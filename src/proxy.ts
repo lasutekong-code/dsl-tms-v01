@@ -41,13 +41,22 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  // 중요: getUser() 호출이 토큰 갱신(refresh) 을 트리거합니다.
-  // getClaims() 는 JWT 로컬 검증만 수행하여 만료 토큰을 갱신하지 못합니다.
-  // 이 호출은 그대로 두어야 사이드메뉴 클릭 등 후속 네비게이션에서도 세션이 유지됩니다.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const isAuthenticated = Boolean(user);
+  // 인증 확인 (하이브리드 - 성능 최적화):
+  // 1) getClaims() 로 액세스 토큰을 로컬 검증한다. 이 프로젝트는 비대칭(ES256)
+  //    서명 키를 사용하므로, 전역 캐시된 JWKS 만으로 네트워크 왕복 없이 검증된다.
+  //    (토큰이 유효한 대부분의 요청은 여기서 끝나 Supabase Auth 왕복이 사라진다.)
+  // 2) 토큰이 만료/무효/부재여서 로컬 검증이 실패한 경우에만 getUser() 로 폴백한다.
+  //    getUser() 는 네트워크 호출이며 동시에 refresh 토큰으로 세션 갱신을 트리거하므로,
+  //    토큰 만료 시점에도 세션이 끊기지 않고 유지된다.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  let isAuthenticated = Boolean(claimsData?.claims);
+
+  if (!isAuthenticated) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    isAuthenticated = Boolean(user);
+  }
 
   const requiresAuth =
     AUTH_REQUIRED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
