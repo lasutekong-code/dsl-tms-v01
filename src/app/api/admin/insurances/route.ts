@@ -6,7 +6,6 @@ import { getAdminOrResponse } from "@/lib/admin/api-guard";
 import {
   dateYmdOptionalSchema,
   flattenZodErrors,
-  nonNegativeFloatOptional,
   optionalNullableTrimmedString,
   uuidString,
 } from "@/lib/admin/zod-util";
@@ -17,7 +16,7 @@ export const dynamic = "force-dynamic";
 const createSchema = z.object({
   vehicle_id: uuidString,
   insurance_company: optionalNullableTrimmedString,
-  insurance_rate: nonNegativeFloatOptional,
+  insurance_rate_text: optionalNullableTrimmedString,
   renewal_date: dateYmdOptionalSchema,
   memo: optionalNullableTrimmedString,
 });
@@ -44,7 +43,8 @@ export async function POST(request: NextRequest) {
   const insertRow = {
     vehicle_id: parsed.data.vehicle_id,
     insurance_company: parsed.data.insurance_company ?? null,
-    insurance_rate: parsed.data.insurance_rate ?? null,
+    insurance_rate: null,
+    insurance_rate_text: parsed.data.insurance_rate_text ?? null,
     renewal_date: parsed.data.renewal_date ?? null,
     memo: parsed.data.memo ?? null,
   };

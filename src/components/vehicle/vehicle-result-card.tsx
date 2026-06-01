@@ -17,6 +17,8 @@ type PhotoRef = {
 
 export type VehicleSearchResult = {
   id: string;
+  rowKey?: string;
+  isDuplicatedVehicle?: boolean;
   plateNumber: string;
   vehicleNumber: string | null;
   vehicleType: string | null;
@@ -75,6 +77,9 @@ export function VehicleResultCard({ result }: { result: VehicleSearchResult }) {
         <Link href={`/vehicles/${result.id}`} className="text-lg font-bold text-slate-900 hover:text-blue-600">
           {result.plateNumber}
         </Link>
+        {result.isDuplicatedVehicle ? (
+          <p className="text-xs font-medium text-amber-600">중복 배정 차량입니다. 상세조회는 가능합니다.</p>
+        ) : null}
         <p className="text-sm text-slate-500">
           {result.clientName ?? "거래처 미지정"} / {result.centerName ?? "센터 미지정"}
         </p>

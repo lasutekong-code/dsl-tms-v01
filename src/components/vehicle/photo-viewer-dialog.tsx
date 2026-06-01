@@ -1,6 +1,6 @@
 "use client";
 
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 
 type PhotoViewerDialogProps = {
   open: boolean;
@@ -13,8 +13,8 @@ export function PhotoViewerDialog({ open, onOpenChange, title, imageUrl }: Photo
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-2 sm:p-4">
-        <div className="space-y-3 pr-8">
-          <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+        <DialogTitle className="pr-8 text-base font-semibold text-slate-900">{title}</DialogTitle>
+        <div className="space-y-3">
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img

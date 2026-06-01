@@ -4,8 +4,8 @@ import { z } from "zod";
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse, omitUndefined } from "@/lib/admin/api-guard";
 import {optionalNullableTrimmedString, flattenZodErrors} from "@/lib/admin/zod-util";
+import { encryptAddressWrite } from "@/lib/admin/pii-transform";
 import { createClient } from "@/lib/supabase/server";
-import type { AddressRow } from "@/types/database";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
 export const dynamic = "force-dynamic";
@@ -50,7 +50,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("addresses").update(patch as Partial<AddressRow>).eq("id", id).select("*").maybeSingle();
+  const encryptedPatch = encryptAddressWrite(patch);
+  const { data, error } = await supabase
+    .from("addresses")
+    .update(encryptedPatch as never)
+    .eq("id", id)
+    .select("*")
+    .maybeSingle();
 
   if (error || !data) {
     return NextResponse.json({ error: "수정에 실패했습니다." }, { status: 500 });

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 
 import { AdminFormActions } from "@/components/admin/admin-form-actions";
+import { AdminRecordMeta } from "@/components/admin/admin-record-meta";
 import { FieldGrid } from "@/components/admin/field-grid";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
@@ -129,6 +130,9 @@ export function VehicleSpecForm({
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
       <AdminPageHeader title="차량 제원" description="적재 한도 및 외형 치수를 입력합니다." />
+      {defaultValues?.id ? (
+        <AdminRecordMeta updatedAt={defaultValues.updated_at} targetTable="vehicle_specs" targetId={defaultValues.id} />
+      ) : null}
       <AdminSectionCard title="제원" sectionId="sec-vehicle-spec">
         <FieldGrid>
           <div className="space-y-2 md:col-span-2">

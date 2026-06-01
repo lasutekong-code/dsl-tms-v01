@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { ContractForm } from "@/components/forms/contract-form";
+import { decryptPii } from "@/lib/crypto/pii";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -20,6 +21,12 @@ export default async function AdminContractsEditPage({ params }: PageProps) {
   }
 
   return (
-    <ContractForm mode="edit" defaultValues={data} vehicles={vehicles ?? []} owners={owners ?? []} clients={clients ?? []} />
+    <ContractForm
+      mode="edit"
+      defaultValues={data}
+      vehicles={vehicles ?? []}
+      owners={(owners ?? []).map((o) => ({ id: o.id, owner_name: decryptPii(o.owner_name) ?? o.owner_name ?? "" }))}
+      clients={clients ?? []}
+    />
   );
 }

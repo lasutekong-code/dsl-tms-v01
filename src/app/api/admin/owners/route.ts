@@ -14,6 +14,8 @@ import {
   phoneSchema,
   requiredTrimmed,
 } from "@/lib/admin/zod-util";
+import { decryptOwnerRow, encryptOwnerWrite } from "@/lib/admin/pii-transform";
+import { decryptPii } from "@/lib/crypto/pii";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +39,7 @@ async function findDuplicateOwnerBusinessNo(
       continue;
     }
 
-    if (normalizeBusinessNo(row.business_no) === normalized) {
+    if (normalizeBusinessNo(decryptPii(row.business_no)) === normalized) {
       return "이미 등록된 사업자등록번호입니다.";
     }
   }
@@ -82,7 +84,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: dupMsg, fields: { business_no: [dupMsg] } }, { status: 409 });
   }
 
-  const insertRow = {
+  const insertRow = encryptOwnerWrite({
     profile_id: parsed.data.profile_id,
     owner_name: parsed.data.owner_name,
     owner_phone: parsed.data.owner_phone,
@@ -92,9 +94,9 @@ export async function POST(request: NextRequest) {
     vat_filing_enabled: parsed.data.vat_filing_enabled ?? false,
     service_fee_send_method: parsed.data.service_fee_send_method ?? null,
     is_active: parsed.data.is_active ?? true,
-  };
+  });
 
-  const { data, error } = await supabase.from("owners").insert(insertRow).select("*").single();
+  const { data, error } = await supabase.from("owners").insert(insertRow as never).select("*").single();
 
   if (error || !data) {
     return NextResponse.json({ error: "저장 중 오류가 발생했습니다." }, { status: 500 });
@@ -109,5 +111,5 @@ export async function POST(request: NextRequest) {
     metadata: { owner_name: data.owner_name },
   });
 
-  return NextResponse.json({ data });
+  return NextResponse.json({ data: decryptOwnerRow(data) });
 }
