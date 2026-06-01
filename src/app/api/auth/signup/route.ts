@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
 import { isUserRole } from "@/lib/auth/login-roles";
-import { createClient } from "@/lib/supabase/server";
+import { getSupabaseConfig } from "@/lib/supabase/config";
+import type { Database } from "@/types/database";
 
 export const dynamic = "force-dynamic";
 
@@ -39,7 +41,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
+  const { anonKey, url } = getSupabaseConfig();
+  const supabase = createSupabaseClient<Database>(url, anonKey, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      persistSession: false,
+    },
+  });
 
   const { data: authData, error: signUpError } = await supabase.auth.signUp({
     email,

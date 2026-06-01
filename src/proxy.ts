@@ -24,25 +24,27 @@ export async function proxy(request: NextRequest) {
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet, headers) {
         cookiesToSet.forEach(({ name, value, options }) => {
           request.cookies.set(name, value);
           response = NextResponse.next({ request });
           response.cookies.set(name, value, options);
         });
+        Object.entries(headers).forEach(([key, value]) => {
+          response.headers.set(key, value);
+        });
       },
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
+  const isAuthenticated = !error && Boolean(data?.claims?.sub);
 
   const requiresAuth =
     AUTH_REQUIRED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
     !AUTH_EXEMPT_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
-  if (requiresAuth && !user) {
+  if (requiresAuth && !isAuthenticated) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.searchParams.set("next", pathname);
