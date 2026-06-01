@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { ConfigurationErrorPage } from "@/components/system/configuration-error";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/client";
 
 export function ResetPasswordForm() {
   const router = useRouter();
+  const supabaseConfigured = isSupabaseConfigured();
   const [pending, setPending] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -16,6 +19,11 @@ export function ResetPasswordForm() {
   const [passwordConfirm, setPasswordConfirm] = useState("");
 
   useEffect(() => {
+    if (!supabaseConfigured) {
+      setCheckingSession(false);
+      return;
+    }
+
     let cancelled = false;
 
     async function checkSession() {
@@ -42,7 +50,7 @@ export function ResetPasswordForm() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [supabaseConfigured]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,9 +78,15 @@ export function ResetPasswordForm() {
       await supabase.auth.signOut();
       toast.success("비밀번호가 변경되었습니다. 새 비밀번호로 로그인해 주세요.");
       router.push("/login?message=password_reset_done");
+    } catch {
+      toast.error("Supabase 환경변수가 설정되지 않아 비밀번호를 변경할 수 없습니다.");
     } finally {
       setPending(false);
     }
+  }
+
+  if (!supabaseConfigured) {
+    return <ConfigurationErrorPage />;
   }
 
   if (checkingSession) {

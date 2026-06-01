@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,10 @@ export async function GET(request: Request) {
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=invalid`);
+  }
+
+  if (!isSupabaseConfigured()) {
+    return NextResponse.redirect(`${origin}/login?error=supabase_config`);
   }
 
   const supabase = await createClient();

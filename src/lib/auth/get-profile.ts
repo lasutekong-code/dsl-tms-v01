@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { mapProfileRow } from "@/lib/auth/map-profile-row";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export type { Profile } from "./profile-display";
@@ -15,6 +16,10 @@ export function getRoleHomePath(role: string) {
 }
 
 export async function getProfile(userId?: string) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
   const supabase = await createClient();
   const id = userId ?? (await supabase.auth.getUser()).data.user?.id;
 

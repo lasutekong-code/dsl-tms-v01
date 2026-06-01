@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { LoginScreen } from "@/components/auth/login-screen";
+import { ConfigurationErrorPage } from "@/components/system/configuration-error";
 import { getProfile, getRoleHomePath } from "@/lib/auth/get-profile";
 import { isUserRole } from "@/lib/auth/login-roles";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 function parseSafeNext(value: string | null): string | null {
@@ -30,6 +32,8 @@ function errorMessage(code: string | undefined): string | null {
       return "관리자 승인 대기 중입니다. 승인 후 다시 로그인해 주세요.";
     case "inactive":
       return "비활성화된 계정입니다. 관리자에게 문의해 주세요.";
+    case "supabase_config":
+      return "Supabase 환경변수가 설정되지 않아 로그인할 수 없습니다.";
     default:
       return null;
   }
@@ -61,6 +65,11 @@ type LoginPageProps = {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const nextPath = parseSafeNext(params?.next ?? null);
+
+  if (!isSupabaseConfigured()) {
+    return <ConfigurationErrorPage />;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -92,6 +101,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
     if (!email || !password) {
       redirect(q("missing"));
+    }
+
+    if (!isSupabaseConfigured()) {
+      redirect(q("supabase_config"));
     }
 
     if (!isUserRole(roleRaw)) {
