@@ -9,6 +9,7 @@ import {
   VEHICLE_PHOTO_BUCKET,
   fetchSignedPhotoUrl,
 } from "@/lib/vehicles/photo-url";
+import { vehicleDetailHref } from "@/lib/vehicles/vehicle-detail-back";
 
 type PhotoRef = {
   bucket: string;
@@ -74,7 +75,10 @@ export function VehicleResultCard({ result }: { result: VehicleSearchResult }) {
   return (
     <Card className="flex h-full flex-col">
       <CardHeader className="space-y-1">
-        <Link href={`/vehicles/${result.id}`} className="text-lg font-bold text-slate-900 hover:text-blue-600">
+        <Link
+          href={vehicleDetailHref(result.id, "/search")}
+          className="text-lg font-bold text-slate-900 hover:text-blue-600"
+        >
           {result.plateNumber}
         </Link>
         {result.isDuplicatedVehicle ? (

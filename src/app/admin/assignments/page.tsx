@@ -80,6 +80,7 @@ export default async function AdminAssignmentsPage({ searchParams }: PageProps) 
 
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const listReturnHref = adminListPageHref("/admin/assignments", page, q);
 
   return (
     <div className="space-y-6">
@@ -111,7 +112,7 @@ export default async function AdminAssignmentsPage({ searchParams }: PageProps) 
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <AdminVehicleDetailLink vehicleId={row.vehicle_id}>
+                  <AdminVehicleDetailLink vehicleId={row.vehicle_id} returnTo={listReturnHref}>
                     {vehicleById.get(row.vehicle_id) ?? "—"}
                   </AdminVehicleDetailLink>
                 </TableCell>

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
+import { adminListPageHref } from "@/lib/admin/list-page-search";
 import { decryptOwnerRow } from "@/lib/admin/pii-transform";
 import { createClient } from "@/lib/supabase/server";
 
@@ -48,6 +49,7 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
 
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const listReturnHref = adminListPageHref("/admin/owners", page, q);
 
   return (
     <div className="space-y-6">
@@ -75,7 +77,7 @@ export default async function AdminOwnersListPage({ searchParams }: PageProps) {
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <AdminVehicleDetailLink vehicleId={vehicleIdByOwner.get(row.id)}>
+                  <AdminVehicleDetailLink vehicleId={vehicleIdByOwner.get(row.id)} returnTo={listReturnHref}>
                     {row.owner_name}
                   </AdminVehicleDetailLink>
                 </TableCell>

@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
+import { adminListPageHref } from "@/lib/admin/list-page-search";
 import { decryptDriverRow } from "@/lib/admin/pii-transform";
 import { createClient } from "@/lib/supabase/server";
 
@@ -50,6 +51,7 @@ export default async function AdminDriversListPage({ searchParams }: PageProps) 
 
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const listReturnHref = adminListPageHref("/admin/drivers", page, q);
 
   return (
     <div className="space-y-6">
@@ -76,7 +78,7 @@ export default async function AdminDriversListPage({ searchParams }: PageProps) 
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <AdminVehicleDetailLink vehicleId={vehicleIdByDriver.get(row.id)}>
+                  <AdminVehicleDetailLink vehicleId={vehicleIdByDriver.get(row.id)} returnTo={listReturnHref}>
                     {row.driver_name}
                   </AdminVehicleDetailLink>
                 </TableCell>

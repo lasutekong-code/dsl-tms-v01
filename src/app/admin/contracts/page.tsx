@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { AdminRegisterButton } from "@/components/admin/admin-register-button";
+import { AdminVehicleDetailLink } from "@/components/admin/admin-vehicle-detail-link";
 import { AdminEntityLink } from "@/components/admin/admin-entity-link";
 import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
@@ -80,6 +81,7 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
 
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const listReturnHref = adminListPageHref("/admin/contracts", page, q);
 
   return (
     <div className="space-y-6">
@@ -117,9 +119,9 @@ export default async function AdminContractsPage({ searchParams }: PageProps) {
                 <TableCell>{ownerById.get(row.owner_id) ?? "—"}</TableCell>
                 <TableCell>{clientById.get(row.client_id) ?? "—"}</TableCell>
                 <TableCell>
-                  <Link href={`/vehicles/${row.vehicle_id}`} className="text-blue-600 hover:underline">
+                  <AdminVehicleDetailLink vehicleId={row.vehicle_id} returnTo={listReturnHref}>
                     {vehicleById.get(row.vehicle_id) ?? "—"}
-                  </Link>
+                  </AdminVehicleDetailLink>
                 </TableCell>
                 <TableCell>
                   <Badge variant="secondary">{row.status}</Badge>

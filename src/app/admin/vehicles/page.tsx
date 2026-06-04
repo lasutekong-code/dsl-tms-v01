@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatDateKo } from "@/lib/format/format-date";
+import { adminListPageHref } from "@/lib/admin/list-page-search";
 import { createClient } from "@/lib/supabase/server";
 
 const PAGE_SIZE = 20;
@@ -36,6 +37,7 @@ export default async function AdminVehiclesListPage({ searchParams }: PageProps)
 
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const listReturnHref = adminListPageHref("/admin/vehicles", page, q);
 
   return (
     <div className="space-y-6">
@@ -62,7 +64,9 @@ export default async function AdminVehiclesListPage({ searchParams }: PageProps)
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <AdminVehicleDetailLink vehicleId={row.id}>{row.vehicle_no}</AdminVehicleDetailLink>
+                  <AdminVehicleDetailLink vehicleId={row.id} returnTo={listReturnHref}>
+                    {row.vehicle_no}
+                  </AdminVehicleDetailLink>
                 </TableCell>
                 <TableCell>{row.car_name ?? "—"}</TableCell>
                 <TableCell>

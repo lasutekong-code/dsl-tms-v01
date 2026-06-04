@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { AdminVehicleDetailLink } from "@/components/admin/admin-vehicle-detail-link";
 import { AdminListActions } from "@/components/admin/admin-list-actions";
 import { AdminRegisterButton } from "@/components/admin/admin-register-button";
 import { AdminDataTableShell, AdminSearchBar } from "@/components/admin/admin-data-table";
@@ -57,6 +58,7 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
 
   const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const listReturnHref = adminListPageHref("/admin/inspections", page, q);
 
   return (
     <div className="space-y-6">
@@ -84,9 +86,9 @@ export default async function AdminInspectionsPage({ searchParams }: PageProps) 
             {(rows ?? []).map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <Link href={`/vehicles/${row.vehicle_id}`} className="text-blue-600 hover:underline">
+                  <AdminVehicleDetailLink vehicleId={row.vehicle_id} returnTo={listReturnHref}>
                     {vehicleById.get(row.vehicle_id) ?? "—"}
-                  </Link>
+                  </AdminVehicleDetailLink>
                 </TableCell>
                 <TableCell>{formatDateKo(row.inspection_date)}</TableCell>
                 <TableCell>{row.inspection_type ?? "—"}</TableCell>
