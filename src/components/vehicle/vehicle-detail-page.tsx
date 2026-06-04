@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 
 import { AddressCard } from "@/components/vehicle/address-card";
@@ -23,6 +24,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatTonnage } from "@/lib/vehicles/format";
+import {
+  getVehicleDetailReturnTo,
+  resolveVehicleDetailBackHref,
+} from "@/lib/vehicles/vehicle-detail-return";
 import type { VehicleDetail } from "@/types/vehicle";
 
 type LoadState =
@@ -38,7 +43,14 @@ type VehicleDetailPageProps = {
   backHref?: string;
 };
 
-export function VehicleDetailPage({ vehicleId, backHref = "/search" }: VehicleDetailPageProps) {
+export function VehicleDetailPage({ vehicleId, backHref: backHrefProp = "/search" }: VehicleDetailPageProps) {
+  const searchParams = useSearchParams();
+  const backHref = useMemo(() => {
+    const fromQuery = searchParams.get("from");
+    const fromStorage = getVehicleDetailReturnTo();
+    return resolveVehicleDetailBackHref(fromQuery ?? fromStorage ?? backHrefProp);
+  }, [backHrefProp, searchParams]);
+
   const [state, setState] = useState<LoadState>({ status: "loading" });
 
   useEffect(() => {

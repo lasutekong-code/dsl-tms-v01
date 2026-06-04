@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import { VehicleResultCard, type VehicleSearchResult } from "@/components/vehicle/vehicle-result-card";
 import { Button } from "@/components/ui/button";
@@ -8,10 +9,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 export default function SearchPageClient() {
+  const urlSearchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<VehicleSearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("거래처명, 차량번호, 운전자명을 입력해 검색하세요.");
+
+  useEffect(() => {
+    const q = urlSearchParams.get("q")?.trim() ?? "";
+    if (q) {
+      setQuery(q);
+    }
+  }, [urlSearchParams]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -88,9 +97,18 @@ export default function SearchPageClient() {
       </p>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {results.map((result, index) => (
-          <VehicleResultCard key={result.rowKey ?? `${result.id}-${index}`} result={result} />
-        ))}
+        {results.map((result, index) => {
+          const returnTo = query.trim()
+            ? `/search?q=${encodeURIComponent(query.trim())}`
+            : "/search";
+          return (
+            <VehicleResultCard
+              key={result.rowKey ?? `${result.id}-${index}`}
+              result={result}
+              returnTo={returnTo}
+            />
+          );
+        })}
       </div>
     </div>
   );

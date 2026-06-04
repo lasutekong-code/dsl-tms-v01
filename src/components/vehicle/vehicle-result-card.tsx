@@ -9,7 +9,7 @@ import {
   VEHICLE_PHOTO_BUCKET,
   fetchSignedPhotoUrl,
 } from "@/lib/vehicles/photo-url";
-import { vehicleDetailHref } from "@/lib/vehicles/vehicle-detail-back";
+import { setVehicleDetailReturnTo, vehicleDetailHref } from "@/lib/vehicles/vehicle-detail-return";
 
 type PhotoRef = {
   bucket: string;
@@ -32,7 +32,13 @@ export type VehicleSearchResult = {
   driverPhoto: PhotoRef | null;
 };
 
-export function VehicleResultCard({ result }: { result: VehicleSearchResult }) {
+export function VehicleResultCard({
+  result,
+  returnTo = "/search",
+}: {
+  result: VehicleSearchResult;
+  returnTo?: string;
+}) {
   const [vehicleUrls, setVehicleUrls] = useState<string[]>([]);
   const [driverUrl, setDriverUrl] = useState<string | null>(null);
   const vehiclePhotos = useMemo(() => result.vehiclePhotos.slice(0, 3), [result.vehiclePhotos]);
@@ -76,8 +82,9 @@ export function VehicleResultCard({ result }: { result: VehicleSearchResult }) {
     <Card className="flex h-full flex-col">
       <CardHeader className="space-y-1">
         <Link
-          href={vehicleDetailHref(result.id, "/search")}
+          href={vehicleDetailHref(result.id, returnTo)}
           className="text-lg font-bold text-slate-900 hover:text-blue-600"
+          onClick={() => setVehicleDetailReturnTo(returnTo)}
         >
           {result.plateNumber}
         </Link>
