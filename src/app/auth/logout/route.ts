@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createRouteHandlerClient } from "@/lib/supabase/route-handler";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-
+export async function GET(request: NextRequest) {
   const url = new URL(request.url);
-  return NextResponse.redirect(new URL("/login", url.origin));
+  const response = NextResponse.redirect(new URL("/login", url.origin));
+  const supabase = createRouteHandlerClient(request, response);
+  await supabase.auth.signOut();
+  return response;
 }

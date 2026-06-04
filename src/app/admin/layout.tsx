@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { AdminForbidden } from "@/components/admin/admin-forbidden";
@@ -7,6 +8,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { mapProfileRow } from "@/lib/auth/map-profile-row";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   if (!isSupabaseConfigured()) {
     redirect("/login?error=config");
@@ -15,7 +18,9 @@ export default async function AdminLayout({ children }: Readonly<{ children: Rea
   const admin = await requireAdmin();
 
   if (!admin.ok && admin.reason === "unauthenticated") {
-    redirect("/login?next=%2Fadmin");
+    const headerStore = await headers();
+    const pathname = headerStore.get("x-pathname") ?? "/admin";
+    redirect(`/login?next=${encodeURIComponent(pathname)}`);
   }
 
   if (!admin.ok) {
