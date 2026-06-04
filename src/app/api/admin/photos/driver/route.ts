@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { insertAuditLog } from "@/lib/admin/audit-log";
 import { getAdminOrResponse } from "@/lib/admin/api-guard";
 import { validatePhotoFile } from "@/lib/admin/photo-file";
-import { uploadAdminStorageObject } from "@/lib/admin/storage-upload";
+import { removeAdminStorageObject, uploadAdminStorageObject } from "@/lib/admin/storage-upload";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/vehicles/build-detail";
 
@@ -93,4 +93,54 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({ data });
+}
+
+export async function DELETE(request: NextRequest) {
+  const gate = await getAdminOrResponse();
+  if (!gate.ok) {
+    return gate.response;
+  }
+
+  let body: { driverId?: string };
+  try {
+    body = (await request.json()) as { driverId?: string };
+  } catch {
+    return NextResponse.json({ error: "JSON body가 필요합니다." }, { status: 400 });
+  }
+
+  const driverId = String(body.driverId ?? "").trim();
+  if (!isUuid(driverId)) {
+    return NextResponse.json({ error: "운전자 ID가 올바르지 않습니다." }, { status: 400 });
+  }
+
+  const supabase = await createClient();
+  const { data: existing } = await supabase
+    .from("driver_photos")
+    .select("id, storage_path")
+    .eq("driver_id", driverId)
+    .maybeSingle();
+
+  if (!existing) {
+    return NextResponse.json({ error: "등록된 사진이 없습니다." }, { status: 404 });
+  }
+
+  if (existing.storage_path) {
+    await removeAdminStorageObject(BUCKET, existing.storage_path);
+  }
+
+  const { error } = await supabase.from("driver_photos").delete().eq("id", existing.id);
+  if (error) {
+    return NextResponse.json({ error: "사진 삭제에 실패했습니다." }, { status: 500 });
+  }
+
+  await insertAuditLog(supabase, {
+    profileId: gate.admin.profileId,
+    userId: gate.admin.userId,
+    action: "driver_photo.delete",
+    targetTable: "driver_photos",
+    targetId: existing.id,
+    metadata: { driver_id: driverId },
+  });
+
+  return NextResponse.json({ ok: true });
 }

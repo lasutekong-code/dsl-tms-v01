@@ -9,8 +9,17 @@ import { AdminFormActions } from "@/components/admin/admin-form-actions";
 import { FilePickerButton } from "@/components/admin/file-picker-button";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { validatePhotoFile } from "@/lib/admin/photo-file";
+
+function parseApiError(payload: unknown): string {
+  if (payload && typeof payload === "object" && "error" in payload && typeof (payload as { error: unknown }).error === "string") {
+    return (payload as { error: string }).error;
+  }
+
+  return "요청 처리 중 오류가 발생했습니다.";
+}
 
 export function DriverPhotoUploadForm({
   driverId,
@@ -23,6 +32,7 @@ export function DriverPhotoUploadForm({
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -90,9 +100,39 @@ export function DriverPhotoUploadForm({
           <AdminFormActions isPending={pending} submitLabel="업로드" listHref="/admin/drivers" />
         </form>
         {existingPath ? (
-          <p className="mt-4 text-sm text-slate-600">
-            현재 경로: <span className="font-mono">{existingPath}</span>
-          </p>
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+            <span>
+              현재 경로: <span className="font-mono">{existingPath}</span>
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={deleting || pending}
+              onClick={async () => {
+                setDeleting(true);
+                try {
+                  const res = await fetch("/api/admin/photos/driver", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ driverId }),
+                  });
+                  const json: unknown = await res.json().catch(() => null);
+                  if (!res.ok) {
+                    toast.error(parseApiError(json));
+                    return;
+                  }
+
+                  toast.success("등록된 사진이 삭제되었습니다.");
+                  router.refresh();
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              삭제하기
+            </Button>
+          </div>
         ) : null}
       </AdminSectionCard>
     </div>

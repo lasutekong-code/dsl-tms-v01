@@ -9,10 +9,21 @@ import { AdminFormActions } from "@/components/admin/admin-form-actions";
 import { FilePickerButton } from "@/components/admin/file-picker-button";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { AdminSectionCard } from "@/components/admin/admin-section-card";
+import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { validatePhotoFile } from "@/lib/admin/photo-file";
 import { VEHICLE_PHOTO_TYPES } from "@/types/admin";
+
+function parseApiError(payload: unknown): string {
+  if (payload && typeof payload === "object" && "error" in payload && typeof (payload as { error: unknown }).error === "string") {
+    return (payload as { error: string }).error;
+  }
+
+  return "요청 처리 중 오류가 발생했습니다.";
+}
+
+const PHOTO_TYPE_LABELS = Object.fromEntries(VEHICLE_PHOTO_TYPES.map((p) => [p.value, p.label]));
 
 export function VehiclePhotoUploadForm({
   vehicleId,
@@ -26,6 +37,7 @@ export function VehiclePhotoUploadForm({
   const router = useRouter();
   const [photoType, setPhotoType] = useState<string>("front");
   const [pending, setPending] = useState(false);
+  const [deletingType, setDeletingType] = useState<string | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -110,13 +122,59 @@ export function VehiclePhotoUploadForm({
         </form>
         <div className="mt-6 text-sm text-slate-600">
           <p className="font-medium">등록된 사진</p>
-          <ul className="mt-2 list-inside list-disc">
-            {existing.map((p) => (
-              <li key={`${p.photo_type}-${p.storage_path}`}>
-                {p.photo_type}: {p.storage_path}
-              </li>
-            ))}
-          </ul>
+          {existing.length === 0 ? (
+            <p className="mt-2 text-slate-500">등록된 사진이 없습니다.</p>
+          ) : (
+            <ul className="mt-2 space-y-2">
+              {existing.map((p) => {
+                const type = p.photo_type ?? "";
+                const label = PHOTO_TYPE_LABELS[type] ?? type;
+                return (
+                  <li
+                    key={`${type}-${p.storage_path}`}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/60 px-3 py-2"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="font-medium text-slate-800">{label}</span>
+                      <span className="ml-2 font-mono text-xs text-slate-500">{p.storage_path}</span>
+                    </span>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={deletingType != null || pending}
+                      onClick={async () => {
+                        if (!type) {
+                          return;
+                        }
+
+                        setDeletingType(type);
+                        try {
+                          const res = await fetch("/api/admin/photos/vehicle", {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ vehicleId, photoType: type }),
+                          });
+                          const json: unknown = await res.json().catch(() => null);
+                          if (!res.ok) {
+                            toast.error(parseApiError(json));
+                            return;
+                          }
+
+                          toast.success(`${label} 사진이 삭제되었습니다.`);
+                          router.refresh();
+                        } finally {
+                          setDeletingType(null);
+                        }
+                      }}
+                    >
+                      {deletingType === type ? "삭제 중…" : "삭제하기"}
+                    </Button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
         </div>
       </AdminSectionCard>
     </div>
