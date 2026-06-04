@@ -1,3 +1,4 @@
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export type AdminSession =
@@ -8,6 +9,10 @@ export type AdminSession =
  * Server-only: resolves current user and verifies active admin profile.
  */
 export async function requireAdmin(): Promise<AdminSession> {
+  if (!isSupabaseConfigured()) {
+    return { ok: false, reason: "unauthenticated" };
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

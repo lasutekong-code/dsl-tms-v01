@@ -13,9 +13,17 @@ type LoginScreenProps = {
   initialError?: string | null;
   initialMessage?: string | null;
   signInAction: (formData: FormData) => Promise<void>;
+  /** Supabase 미설정 등으로 로그인 폼을 숨길 때 */
+  disableForm?: boolean;
 };
 
-export function LoginScreen({ nextPath, initialError, initialMessage, signInAction }: LoginScreenProps) {
+export function LoginScreen({
+  nextPath,
+  initialError,
+  initialMessage,
+  signInAction,
+  disableForm = false,
+}: LoginScreenProps) {
   const [role, setRole] = useState<UserRole>("admin");
 
   return (
@@ -38,16 +46,19 @@ export function LoginScreen({ nextPath, initialError, initialMessage, signInActi
           {initialError ? (
             <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
               {initialError}
-              <p className="mt-2 text-xs text-red-600">
-                계정이 없거나 승인 전이라면{" "}
-                <Link href="/login/signup" className="font-medium underline">
-                  신규 가입
-                </Link>
-                을 신청해 주세요.
-              </p>
+              {!disableForm ? (
+                <p className="mt-2 text-xs text-red-600">
+                  계정이 없거나 승인 전이라면{" "}
+                  <Link href="/login/signup" className="font-medium underline">
+                    신규 가입
+                  </Link>
+                  을 신청해 주세요.
+                </p>
+              ) : null}
             </div>
           ) : null}
 
+          {disableForm ? null : (
           <form action={signInAction} className="space-y-6">
             <input type="hidden" name="role" value={role} />
             {nextPath ? <input type="hidden" name="next" value={nextPath} /> : null}
@@ -114,14 +125,18 @@ export function LoginScreen({ nextPath, initialError, initialMessage, signInActi
               로그인
             </button>
           </form>
+          )}
 
+          {disableForm ? null : (
           <p className="mt-4 text-center text-sm text-neutral-600">
             아이디·비밀번호가 없으신가요?{" "}
             <Link href="/login/signup" className="font-medium text-[#2196f3] hover:underline">
               신규 가입
             </Link>
           </p>
+          )}
 
+          {disableForm ? null : (
           <div className="mt-6 flex items-center justify-center gap-4 text-base">
             <Link href="/login/find-id" className="font-medium text-neutral-600 hover:text-[#2196f3]">
               아이디 찾기
@@ -133,6 +148,7 @@ export function LoginScreen({ nextPath, initialError, initialMessage, signInActi
               비밀번호 찾기
             </Link>
           </div>
+          )}
         </div>
 
         <p className="text-center text-sm text-neutral-500">© 2026 Fleet Management System. All rights reserved.</p>

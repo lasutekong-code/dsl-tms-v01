@@ -4,11 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("admin_dashboard_settings")
     .select("quick_guide, photo_guide, updated_at")
     .eq("id", "default")
     .maybeSingle();
+
+  if (error) {
+    console.error("admin_dashboard_settings load failed", error);
+  }
 
   const quickGuide =
     data?.quick_guide ??

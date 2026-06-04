@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { LoginScreen } from "@/components/auth/login-screen";
 import { getProfile, getRoleHomePath } from "@/lib/auth/get-profile";
 import { isUserRole } from "@/lib/auth/login-roles";
+import { getSupabaseConfigMessage, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 function parseSafeNext(value: string | null): string | null {
@@ -30,6 +31,8 @@ function errorMessage(code: string | undefined): string | null {
       return "관리자 승인 대기 중입니다. 승인 후 다시 로그인해 주세요.";
     case "inactive":
       return "비활성화된 계정입니다. 관리자에게 문의해 주세요.";
+    case "config":
+      return getSupabaseConfigMessage();
     default:
       return null;
   }
@@ -58,9 +61,27 @@ type LoginPageProps = {
   }>;
 };
 
+async function blockedSignIn() {
+  "use server";
+  redirect("/login?error=config");
+}
+
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
   const nextPath = parseSafeNext(params?.next ?? null);
+
+  if (!isSupabaseConfigured()) {
+    return (
+      <LoginScreen
+        nextPath={nextPath}
+        initialError={errorMessage("config")}
+        initialMessage={successMessage(params?.message)}
+        signInAction={blockedSignIn}
+        disableForm
+      />
+    );
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

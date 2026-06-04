@@ -3,10 +3,15 @@ import { redirect } from "next/navigation";
 import { AdminForbidden } from "@/components/admin/admin-forbidden";
 import { AdminLayoutClient } from "@/components/admin/admin-layout-client";
 import { requireAdmin } from "@/lib/auth/require-admin";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import { mapProfileRow } from "@/lib/auth/map-profile-row";
 
 export default async function AdminLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  if (!isSupabaseConfigured()) {
+    redirect("/login?error=config");
+  }
+
   const admin = await requireAdmin();
 
   if (!admin.ok && admin.reason === "unauthenticated") {

@@ -39,6 +39,23 @@ Restart the dev server after changing `.env.local`:
 npm run dev
 ```
 
+## Vercel (Preview / Production)
+
+In the Vercel project, open **Settings → Environment Variables** and add the same keys for **Preview** and **Production** (not only Production):
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` (admin features, password reset lookup)
+- `FIELD_ENCRYPTION_KEY` (PII encryption; use the same value as local)
+
+After saving, **redeploy** the Preview deployment (or push a new commit). Without these variables, the app shows the login screen with a configuration message instead of a blank error page.
+
+In **Supabase → Authentication → URL Configuration**, add redirect URLs for each Vercel host, for example:
+
+- `https://<your-preview>.vercel.app/auth/callback`
+- `https://<your-preview>.vercel.app/login/reset-password`
+- `https://<your-production-domain>/auth/callback`
+
 ## Supabase Auth redirect URLs
 
 For password reset emails, add your app origin in **Authentication → URL Configuration**:
