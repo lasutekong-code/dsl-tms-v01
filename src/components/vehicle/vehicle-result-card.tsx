@@ -31,10 +31,21 @@ export type VehicleSearchResult = {
   driverPhoto: PhotoRef | null;
 };
 
-export function VehicleResultCard({ result }: { result: VehicleSearchResult }) {
+type VehicleResultCardProps = {
+  result: VehicleSearchResult;
+  searchQuery?: string;
+};
+
+export function VehicleResultCard({ result, searchQuery }: VehicleResultCardProps) {
   const [vehicleUrls, setVehicleUrls] = useState<string[]>([]);
   const [driverUrl, setDriverUrl] = useState<string | null>(null);
   const vehiclePhotos = useMemo(() => result.vehiclePhotos.slice(0, 3), [result.vehiclePhotos]);
+
+  // 검색어가 있으면 from에 포함, 없으면 /search만
+  const fromPath = searchQuery && searchQuery.trim()
+    ? `/search?q=${encodeURIComponent(searchQuery.trim())}`
+    : "/search";
+  const detailHref = `/vehicles/${result.id}?from=${encodeURIComponent(fromPath)}`;
 
   useEffect(() => {
     let mounted = true;
@@ -74,7 +85,7 @@ export function VehicleResultCard({ result }: { result: VehicleSearchResult }) {
   return (
     <Card className="flex h-full flex-col">
       <CardHeader className="space-y-1">
-        <Link href={`/vehicles/${result.id}`} className="text-lg font-bold text-slate-900 hover:text-blue-600">
+        <Link href={detailHref} className="text-lg font-bold text-slate-900 hover:text-blue-600">
           {result.plateNumber}
         </Link>
         {result.isDuplicatedVehicle ? (
